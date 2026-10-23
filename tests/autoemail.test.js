@@ -121,3 +121,30 @@ test('painel remove os avisos decorativos, amplia a tipografia e mantém os rela
   assert.match(html, /<th>Próximo passo<\/th>/);
   assert.match(html, /campanha\.recomendacao/);
 });
+
+test('estado vazio do gráfico usa valores numéricos e informa o intervalo correspondente', () => {
+  const html = fs.readFileSync(path.join(root, 'Painel.html'), 'utf8');
+  const obterFuncao = (nome) => {
+    const funcao = html.match(new RegExp(`    function ${nome}\\([^\\n]*\\) \\{[\\s\\S]*?\\n    \\}`));
+    assert.ok(funcao, `função ${nome} encontrada no painel`);
+    return funcao[0];
+  };
+  const sandbox = {};
+  vm.createContext(sandbox);
+  vm.runInContext([
+    obterFuncao('valorTendencia'),
+    obterFuncao('haAtividadeNaTendencia'),
+    obterFuncao('mensagemSemAtividadeNaTendencia')
+  ].join('\n\n'), sandbox);
+
+  assert.equal(sandbox.haAtividadeNaTendencia([
+    { enviados: '0', aberturas: '0' },
+    { enviados: 0, aberturas: null }
+  ]), false);
+  assert.equal(sandbox.haAtividadeNaTendencia([{ enviados: '2', aberturas: '0' }]), true);
+  assert.equal(sandbox.mensagemSemAtividadeNaTendencia([
+    { label: '17/10' }, { label: '23/10' }
+  ]), 'Nenhuma atividade registrada entre 17/10 e 23/10.');
+  assert.match(html, /\.chart-wrap \{[^}]*position: relative;/);
+  assert.doesNotMatch(html, /Ainda não há atividade registrada/);
+});

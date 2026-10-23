@@ -137,14 +137,14 @@
     .legend-item { display: inline-flex; align-items: center; gap: 5px; }
     .legend-dot { width: 7px; height: 7px; border-radius: 3px; background: var(--teal); }
     .legend-dot.open { background: var(--gold); }
-    .chart-wrap { display: flex; align-items: stretch; gap: 12px; height: 176px; padding: 23px 18px 12px; }
+    .chart-wrap { position: relative; display: flex; align-items: stretch; gap: 12px; height: 176px; padding: 23px 18px 12px; }
     .chart-axis { display: flex; flex: 0 0 24px; flex-direction: column; justify-content: space-between; padding: 0 0 17px; color: #9cabb5; font-size: 11px; text-align: right; }
     .chart-grid { position: relative; display: flex; flex: 1; align-items: stretch; justify-content: space-around; min-width: 0; border-bottom: 1px solid #dce5e9; background: repeating-linear-gradient(to bottom, transparent 0, transparent 37px, #edf1f3 38px, transparent 39px); }
     .chart-day { position: relative; display: flex; flex: 1; align-items: flex-end; justify-content: center; gap: 4px; min-width: 18px; padding: 0 2px 18px; }
     .chart-bar { width: min(15px, 38%); min-height: 3px; border-radius: 5px 5px 1px 1px; background: linear-gradient(180deg, #21a2a6, var(--teal)); transition: height .25s ease; }
     .chart-bar.open { background: linear-gradient(180deg, #f2cc7a, var(--gold)); }
     .chart-label { position: absolute; right: 0; bottom: 0; left: 0; color: #8a9aa6; font-size: 11px; text-align: center; }
-    .chart-empty { position: absolute; top: 41%; left: 50%; color: var(--muted-light); font-size: 13px; transform: translate(-50%,-50%); white-space: nowrap; }
+    .chart-empty { position: absolute; z-index: 1; top: 50%; left: 50%; width: calc(100% - 24px); color: var(--muted-light); font-size: 13px; line-height: 1.35; text-align: center; transform: translate(-50%,-50%); white-space: normal; pointer-events: none; }
     .history-banner { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; padding: 12px 15px; border: 1px solid #dce7ef; border-radius: 11px; color: #496278; background: #f4f8fb; }
     .history-banner[hidden] { display: none; }
     .history-banner strong { display: block; color: var(--navy); font-size: 13px; }
@@ -775,27 +775,59 @@
       elemento.classList.add((numero === 0 ? 'neutral' : (numero > 0) !== lowerIsBetter ? 'up' : 'down'));
     }
 
+    function valorTendencia(item, campo) {
+      const valor = Number(item && item[campo]);
+      return isFinite(valor) && valor > 0 ? valor : 0;
+    }
+
+    function haAtividadeNaTendencia(dados) {
+      return Array.isArray(dados) && dados.some(function (item) {
+        return valorTendencia(item, 'enviados') > 0 || valorTendencia(item, 'aberturas') > 0;
+      });
+    }
+
+    function mensagemSemAtividadeNaTendencia(dados) {
+      const inicio = String(dados[0] && dados[0].label || '').trim();
+      const fim = String(dados[dados.length - 1] && dados[dados.length - 1].label || '').trim();
+      if (inicio && fim && inicio === fim) return 'Nenhuma atividade registrada em ' + inicio + '.';
+      if (inicio && fim) return 'Nenhuma atividade registrada entre ' + inicio + ' e ' + fim + '.';
+      return 'Nenhuma atividade registrada no período selecionado.';
+    }
+
     function renderizarTendencia(dados) {
       const container = document.getElementById('trendChart');
+      const serie = Array.isArray(dados) ? dados : [];
       container.textContent = '';
-      if (!dados.length) { container.innerHTML = '<div class="chart-empty">Sem dados no período selecionado</div>'; return; }
-      const maximo = Math.max(1, ...dados.map(function (item) { return Math.max(Number(item.enviados) || 0, Number(item.aberturas) || 0); }));
+      if (!serie.length) {
+        const vazio = document.createElement('div');
+        vazio.className = 'chart-empty';
+        vazio.textContent = 'Sem dados para exibir no período selecionado.';
+        container.appendChild(vazio);
+        return;
+      }
+
+      const maximo = Math.max(1, ...serie.map(function (item) {
+        return Math.max(valorTendencia(item, 'enviados'), valorTendencia(item, 'aberturas'));
+      }));
       const eixo = document.createElement('div');
       eixo.className = 'chart-axis';
       eixo.innerHTML = '<span>' + formatNumber(maximo) + '</span><span>' + formatNumber(Math.round(maximo / 2)) + '</span><span>0</span>';
       const grid = document.createElement('div');
       grid.className = 'chart-grid';
-      dados.forEach(function (item) {
+      serie.forEach(function (item) {
+        item = item || {};
+        const totalEnviados = valorTendencia(item, 'enviados');
+        const totalAberturas = valorTendencia(item, 'aberturas');
         const grupo = document.createElement('div');
         grupo.className = 'chart-day';
         const enviados = document.createElement('div');
         enviados.className = 'chart-bar';
-        enviados.style.height = Math.max(3, (Number(item.enviados) || 0) / maximo * 100) + '%';
-        enviados.title = formatNumber(item.enviados) + ' mensagens aceitas';
+        enviados.style.height = Math.max(3, totalEnviados / maximo * 100) + '%';
+        enviados.title = formatNumber(totalEnviados) + ' mensagens aceitas';
         const abertas = document.createElement('div');
         abertas.className = 'chart-bar open';
-        abertas.style.height = Math.max(3, (Number(item.aberturas) || 0) / maximo * 100) + '%';
-        abertas.title = formatNumber(item.aberturas) + ' aberturas únicas';
+        abertas.style.height = Math.max(3, totalAberturas / maximo * 100) + '%';
+        abertas.title = formatNumber(totalAberturas) + ' aberturas únicas';
         const label = document.createElement('span');
         label.className = 'chart-label';
         label.textContent = item.label || '';
@@ -803,8 +835,11 @@
       });
       container.appendChild(eixo);
       container.appendChild(grid);
-      if (dados.every(function (item) { return !item.enviados && !item.aberturas; })) {
-        const mensagem = document.createElement('div'); mensagem.className = 'chart-empty'; mensagem.textContent = 'Ainda não há atividade registrada'; container.appendChild(mensagem);
+      if (!haAtividadeNaTendencia(serie)) {
+        const mensagem = document.createElement('div');
+        mensagem.className = 'chart-empty';
+        mensagem.textContent = mensagemSemAtividadeNaTendencia(serie);
+        container.appendChild(mensagem);
       }
     }
 
