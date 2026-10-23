@@ -110,3 +110,14 @@ test('todos os arquivos Apps Script e o JavaScript da interface têm sintaxe vá
   assert.equal(scripts.length, 1, 'a interface deve conter um único bloco JavaScript inline');
   assert.doesNotThrow(() => new vm.Script(scripts[0][1], { filename: 'Painel.inline.js' }));
 });
+
+test('painel remove os avisos decorativos, amplia a tipografia e mantém os relatórios', () => {
+  const html = fs.readFileSync(path.join(root, 'Painel.html'), 'utf8');
+  const css = html.split('<style>', 2)[1].split('</style>', 1)[0];
+  assert.doesNotMatch(html, /class="sidebar-tip"|id="recommendations"|renderizarRecomendacoes/);
+  assert.match(css, /body \{[^}]*font-size: 15px;/);
+  assert.match(html, /id="campaignRows"/);
+  assert.match(html, /id="trackingRows"/);
+  assert.match(html, /<th>Próximo passo<\/th>/);
+  assert.match(html, /campanha\.recomendacao/);
+});
