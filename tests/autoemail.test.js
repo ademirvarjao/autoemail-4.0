@@ -195,3 +195,11 @@ test('a pré-visualização mostra progresso até carregar o iframe e trata falh
   assert.match(css, /\.preview-paper \{[^}]*position: relative;/);
   assert.match(css, /\.preview-loading\[hidden\] \{ display: none; \}/);
 });
+
+test('o corpo do editor evita rolagem horizontal desnecessária e preserva o overflow real', () => {
+  const html = fs.readFileSync(path.join(root, 'Painel.html'), 'utf8');
+  const css = html.split('<style>', 2)[1].split('</style>', 1)[0];
+  assert.match(css, /\.editor-content \{[^}]*overflow-x: auto; overflow-y: auto;[^}]*overflow-wrap: anywhere;/);
+  assert.match(css, /\.editor-content img, \.editor-content table[^\{]*\{ max-width: 100%; \}/);
+  assert.match(css, /\.editor-content pre \{[^}]*white-space: pre-wrap;/);
+});

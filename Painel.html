@@ -195,9 +195,13 @@
     .format-btn:hover { color: var(--teal); background: var(--teal-light); }
     .format-separator { width: 1px; height: 17px; margin: 0 3px; background: #dce4e8; }
     .format-spacer { flex: 1; }
-    .editor-content { min-height: 310px; max-height: 460px; overflow: auto; padding: 18px; border: 1px solid #dbe3e8; border-radius: 0 0 9px 9px; color: #263746; background: white; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.65; outline: none; }
+    .editor-content { width: 100%; min-width: 0; max-width: 100%; min-height: 310px; max-height: 460px; overflow-x: auto; overflow-y: auto; overflow-wrap: anywhere; padding: 18px; border: 1px solid #dbe3e8; border-radius: 0 0 9px 9px; color: #263746; background: white; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.65; outline: none; }
     .editor-content:empty::before { color: #a2afb8; content: 'Escreva sua mensagem aqui…'; pointer-events: none; }
-    .editor-content img { max-width: 100%; height: auto; cursor: pointer; }
+    .editor-content img, .editor-content table, .editor-content video, .editor-content iframe, .editor-content svg { max-width: 100%; }
+    .editor-content img, .editor-content video { height: auto; }
+    .editor-content img { cursor: pointer; }
+    .editor-content th, .editor-content td { overflow-wrap: anywhere; }
+    .editor-content pre { max-width: 100%; overflow-x: auto; overflow-wrap: anywhere; white-space: pre-wrap; }
     .editor-hint { display: flex; justify-content: space-between; gap: 10px; margin-top: 6px; color: #95a2ac; font-size: 12px; }
     .attachment-area { margin-top: 16px; padding: 13px; border: 1px dashed #c9d6dc; border-radius: 10px; background: #fbfcfd; }
     .attachment-head { display: flex; align-items: center; justify-content: space-between; gap: 9px; }
