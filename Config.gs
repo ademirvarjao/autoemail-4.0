@@ -54,8 +54,8 @@ function abrirPainel() {
   const template = HtmlService.createTemplateFromFile('Painel');
   template.userEmail = Session.getActiveUser().getEmail() || Session.getEffectiveUser().getEmail() || '';
   const html = template.evaluate()
-    .setWidth(1320)
-    .setHeight(860)
+    .setWidth(1120)
+    .setHeight(720)
     .setTitle('Auto Email 4.0 — Central de comunicação');
 
   SpreadsheetApp.getUi().showModalDialog(html, 'Auto Email 4.0');
