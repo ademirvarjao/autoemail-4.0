@@ -240,8 +240,10 @@
     .save-template-row .btn { flex: 1; }
     .preview-meta { display: flex; flex-wrap: wrap; gap: 7px 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px 9px 0 0; color: #516576; background: #f8fafb; font-size: 12px; }
     .preview-meta b { color: var(--navy); }
-    .preview-paper { min-height: 410px; padding: 15px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 9px 9px; background: #eef2f4; }
-    .preview-paper iframe { width: 100%; min-height: 380px; border: 1px solid #e2e8eb; border-radius: 7px; background: white; }
+    .preview-paper { position: relative; min-height: 410px; padding: 15px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 9px 9px; background: #eef2f4; }
+    .preview-paper iframe { display: block; width: 100%; min-height: 380px; border: 1px solid #e2e8eb; border-radius: 7px; background: white; }
+    .preview-loading { position: absolute; z-index: 2; inset: 15px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; border-radius: 7px; color: var(--navy); background: rgba(248,250,251,.94); font-size: 14px; font-weight: 650; text-align: center; }
+    .preview-loading[hidden] { display: none; }
     .preview-nav { display: inline-flex; align-items: center; gap: 7px; margin-left: auto; color: #647784; }
     .preview-nav[hidden] { display: none; }
     .preview-nav button { width: 25px; height: 25px; border: 1px solid #dbe4e8; border-radius: 6px; color: #4c6371; background: white; cursor: pointer; }
@@ -509,7 +511,13 @@
               <div id="previewSurface" class="editor-surface">
                 <div class="target-strip"><div class="target-copy"><strong>Amostra personalizada</strong><span>Revise destinatário, CC e assunto antes do envio.</span></div><div class="target-count" id="previewTarget">Registro de exemplo</div></div>
                 <div class="preview-meta"><span><b>Para:</b> <span id="previewTo">—</span></span><span><b>CC:</b> <span id="previewCC">—</span></span><span><b>Assunto:</b> <span id="previewSubject">—</span></span></div>
-                <div class="preview-paper"><iframe id="framePreview" title="Pré-visualização do e-mail" sandbox="allow-same-origin"></iframe></div>
+                <div id="previewPaper" class="preview-paper" aria-busy="false">
+                  <iframe id="framePreview" title="Pré-visualização do e-mail" sandbox="allow-same-origin"></iframe>
+                  <div id="previewLoading" class="preview-loading" hidden role="status" aria-live="polite" aria-atomic="true">
+                    <div class="spinner" aria-hidden="true"></div>
+                    <span id="previewLoadingLabel">Montando pré-visualização…</span>
+                  </div>
+                </div>
                 <p class="field-hint">A visualização usa a primeira linha visível por padrão. Use as setas acima para percorrer a seleção.</p>
               </div>
             </section>
@@ -604,6 +612,8 @@
       totalSizeBytes: 0,
       currentIndex: 0,
       totalRecords: 0,
+      previewRequestId: 0,
+      previewFrameRequestId: -1,
       trackingUrl: '',
       trackingSearchTimer: null,
       dashboardData: null
@@ -656,7 +666,10 @@
       document.execCommand('insertHTML', false, sanitizarHtmlEditor(html));
     });
     document.getElementById('inpSubject').addEventListener('focus', function () { state.lastFocused = 'subject'; });
-    document.getElementById('framePreview').addEventListener('load', ajustarAlturaIframe);
+    document.getElementById('framePreview').addEventListener('load', function () {
+      ajustarAlturaIframe();
+      if (state.previewFrameRequestId === state.previewRequestId) definirCarregamentoPreview(false);
+    });
 
     function iniciaisDoUsuario(email) {
       const partes = String(email || '').split('@')[0].split(/[._+-]+/).filter(Boolean);
@@ -1223,6 +1236,14 @@
         .contarDestinatarios();
     }
 
+    function definirCarregamentoPreview(ativo, texto) {
+      const papel = document.getElementById('previewPaper');
+      const carregamento = document.getElementById('previewLoading');
+      if (texto) document.getElementById('previewLoadingLabel').textContent = texto;
+      carregamento.hidden = !ativo;
+      papel.setAttribute('aria-busy', String(Boolean(ativo)));
+    }
+
     function setMode(mode) {
       const preview = mode === 'view';
       document.getElementById('editTab').classList.toggle('active', !preview);
@@ -1234,17 +1255,34 @@
     }
 
     function atualizarPreview() {
-      const html = document.getElementById('editorDiv').innerHTML; const assunto = document.getElementById('inpSubject').value;
+      const html = document.getElementById('editorDiv').innerHTML;
+      const assunto = document.getElementById('inpSubject').value;
+      const requestId = ++state.previewRequestId;
+      const frame = document.getElementById('framePreview');
+      definirCarregamentoPreview(true, 'Gerando pré-visualização…');
       google.script.run
         .withSuccessHandler(function (res) {
-          if (!res || res.error) { document.getElementById('framePreview').srcdoc = '<p style="padding:20px;color:#a44;font:13px Arial">' + escapeText(res && res.error || 'Não foi possível montar a pré-visualização.') + '</p>'; return; }
-          state.currentIndex = res.index; state.totalRecords = res.total;
+          if (requestId !== state.previewRequestId) return;
+          if (!res || res.error) {
+            state.previewFrameRequestId = requestId;
+            frame.srcdoc = '<!doctype html><html><body><p style="padding:20px;color:#a44;font:13px Arial">' + escapeText(res && res.error || 'Não foi possível montar a pré-visualização.') + '</p></body></html>';
+            return;
+          }
+          state.currentIndex = res.index;
+          state.totalRecords = res.total;
           document.getElementById('lblCounter').textContent = (res.index + 1) + ' / ' + res.total;
-          document.getElementById('previewTo').textContent = res.para || '—'; document.getElementById('previewCC').textContent = res.cc || '—'; document.getElementById('previewSubject').textContent = res.assuntoPreview || '—';
+          document.getElementById('previewTo').textContent = res.para || '—';
+          document.getElementById('previewCC').textContent = res.cc || '—';
+          document.getElementById('previewSubject').textContent = res.assuntoPreview || '—';
           document.getElementById('previewTarget').textContent = 'Linha ' + (res.index + 1) + ' de ' + res.total;
-          document.getElementById('framePreview').srcdoc = '<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:24px;font:14px/1.6 Arial,sans-serif;color:#243746;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}</style></head><body>' + (res.htmlPreview || '') + '</body></html>';
+          state.previewFrameRequestId = requestId;
+          frame.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:24px;font:14px/1.6 Arial,sans-serif;color:#243746;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}</style></head><body>' + (res.htmlPreview || '') + '</body></html>';
         })
-        .withFailureHandler(tratarErro)
+        .withFailureHandler(function (erro) {
+          if (requestId !== state.previewRequestId) return;
+          definirCarregamentoPreview(false);
+          tratarErro(erro);
+        })
         .gerarPreview(html, assunto, state.currentIndex);
     }
 
