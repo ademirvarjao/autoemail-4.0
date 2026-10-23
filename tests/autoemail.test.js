@@ -148,3 +148,37 @@ test('estado vazio do gráfico usa valores numéricos e informa o intervalo corr
   assert.match(html, /\.chart-wrap \{[^}]*position: relative;/);
   assert.doesNotMatch(html, /Ainda não há atividade registrada/);
 });
+
+test('foto de perfil é associada ao e-mail ativo e usa somente imagem hospedada pelo Google', () => {
+  const config = fs.readFileSync(path.join(root, 'Config.gs'), 'utf8');
+  const funcao = config.match(/function obterFotoPerfilGoogle_\(emailUsuario\) \{[\s\S]*?\n\}/);
+  assert.ok(funcao, 'função de consulta da foto deve existir');
+
+  let perfil = { email: 'ana@example.com', picture: 'https://lh3.googleusercontent.com/a/profile-photo' };
+  const sandbox = {
+    ScriptApp: { getOAuthToken: () => 'oauth-token' },
+    UrlFetchApp: { fetch: () => ({ getResponseCode: () => 200, getContentText: () => JSON.stringify(perfil) }) },
+    console: { warn: () => {} }
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(funcao[0], sandbox);
+  assert.equal(sandbox.obterFotoPerfilGoogle_('ana@example.com'), perfil.picture);
+  assert.equal(sandbox.obterFotoPerfilGoogle_('outra@example.com'), '');
+  perfil = { email: 'ana@example.com', picture: 'https://example.com/photo.jpg' };
+  assert.equal(sandbox.obterFotoPerfilGoogle_('ana@example.com'), '');
+});
+
+test('rodapé exibe o e-mail completo e remove a legenda de armazenamento', () => {
+  const html = fs.readFileSync(path.join(root, 'Painel.html'), 'utf8');
+  const css = html.split('<style>', 2)[1].split('</style>', 1)[0];
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'appsscript.json'), 'utf8'));
+  const config = fs.readFileSync(path.join(root, 'Config.gs'), 'utf8');
+  assert.match(html, /data-user-email="<\?= userEmail \?>"/);
+  assert.match(html, /id="footerAvatarImage"/);
+  assert.match(html, /getUserProfilePhoto\(\)/);
+  assert.match(config, /function getUserProfilePhoto\(\)/);
+  assert.match(css, /\.footer-copy strong \{[^}]*overflow-wrap: anywhere;[^}]*white-space: normal;/);
+  assert.doesNotMatch(html, /Dados persistidos na planilha/);
+  assert.ok(manifest.oauthScopes.includes('https://www.googleapis.com/auth/userinfo.profile'));
+  assert.ok(manifest.oauthScopes.includes('https://www.googleapis.com/auth/script.external_request'));
+});
