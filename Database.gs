@@ -844,21 +844,156 @@ function getTrackingReport(filtros) {
   }
 }
 
-function exportarRelatorioCSV(filtros) {
-  filtros = Object.assign({}, filtros || {}, { exportAll: true });
-  if (!filtros.period) filtros.period = 'all';
-  const resultado = getTrackingReport(filtros);
-  if (!resultado.success) return resultado;
-  const cabecalhos = [
+function obterRelatorioCompletoRastreamento_(filtros) {
+  const filtrosCompletos = Object.assign({}, filtros || {}, { exportAll: true });
+  if (!filtrosCompletos.period) filtrosCompletos.period = 'all';
+  return getTrackingReport(filtrosCompletos);
+}
+
+function cabecalhosExportacaoRastreamento_() {
+  return [
     'Data de envio', 'Destinatário principal', 'CC', 'Empresa', 'Assunto',
     'Status', 'Primeira abertura', 'Última abertura', 'Eventos de pixel',
     'ID da campanha', 'Erro', 'Origem'
   ];
+}
+
+function dataPlanilhaExportacaoRastreamento_(valor) {
+  if (!valor) return '';
+  const data = new Date(valor);
+  return isNaN(data.getTime()) ? String(valor) : data;
+}
+
+function textoPlanilhaExportacaoRastreamento_(valor) {
+  const texto = String(valor === null || valor === undefined ? '' : valor);
+  return /^[\s]*[=+\-@]/.test(texto) ? "'" + texto : texto;
+}
+
+function linhaPlanilhaExportacaoRastreamento_(item) {
+  return [
+    dataPlanilhaExportacaoRastreamento_(item.enviadoEm),
+    textoPlanilhaExportacaoRastreamento_(item.destinatario),
+    textoPlanilhaExportacaoRastreamento_(item.cc),
+    textoPlanilhaExportacaoRastreamento_(item.empresa),
+    textoPlanilhaExportacaoRastreamento_(item.assunto),
+    textoPlanilhaExportacaoRastreamento_(item.status),
+    dataPlanilhaExportacaoRastreamento_(item.primeiraAbertura),
+    dataPlanilhaExportacaoRastreamento_(item.ultimaAbertura),
+    numeroSeguro_(item.eventosPixel),
+    textoPlanilhaExportacaoRastreamento_(item.idCampanha),
+    textoPlanilhaExportacaoRastreamento_(item.erro),
+    textoPlanilhaExportacaoRastreamento_(item.origem)
+  ];
+}
+
+function nomeArquivoExportacaoRastreamento_(formato) {
+  const momento = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
+  return 'autoemail-rastreamento-' + momento + '.' + formato;
+}
+
+function gerarBlobPdfRastreamento_(spreadsheetId, sheetId, nomeArquivo) {
+  const parametros = {
+    format: 'pdf', gid: sheetId, size: 'A4', portrait: 'false', fitw: 'true',
+    sheetnames: 'false', printtitle: 'false', pagenumbers: 'true',
+    gridlines: 'false', fzr: 'true', top_margin: '0.35', bottom_margin: '0.35',
+    left_margin: '0.25', right_margin: '0.25'
+  };
+  const query = Object.keys(parametros).map(function (chave) {
+    return encodeURIComponent(chave) + '=' + encodeURIComponent(parametros[chave]);
+  }).join('&');
+  const url = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(spreadsheetId) + '/export?' + query;
+  const resposta = UrlFetchApp.fetch(url, {
+    method: 'get',
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true
+  });
+  const codigo = resposta.getResponseCode();
+  const cabecalhos = resposta.getHeaders ? resposta.getHeaders() : {};
+  const tipoConteudo = String(cabecalhos['Content-Type'] || cabecalhos['content-type'] || '');
+  if (codigo !== 200 || !/application\/pdf/i.test(tipoConteudo)) {
+    throw new Error('O Google Sheets não conseguiu gerar o PDF (HTTP ' + codigo + ').');
+  }
+  return resposta.getBlob().setName(nomeArquivo);
+}
+
+function exportarRelatorioArquivo_(filtros, formato) {
+  const resultado = obterRelatorioCompletoRastreamento_(filtros);
+  if (!resultado.success) return resultado;
+
+  let spreadsheetId = '';
+  try {
+    const cabecalhos = cabecalhosExportacaoRastreamento_();
+    const linhas = [cabecalhos].concat(resultado.rows.map(linhaPlanilhaExportacaoRastreamento_));
+    const planilha = SpreadsheetApp.create('Auto Email - exportação de rastreamento');
+    spreadsheetId = planilha.getId();
+    const aba = planilha.getSheets()[0];
+    aba.setName('Rastreamento');
+    aba.getRange(1, 1, linhas.length, cabecalhos.length).setValues(linhas);
+    aba.setFrozenRows(1);
+    aba.setRowHeight(1, 34);
+    aba.getRange(1, 1, linhas.length, cabecalhos.length).setFontSize(formato === 'pdf' ? 8 : 10);
+    aba.getRange(1, 1, 1, cabecalhos.length)
+      .setFontWeight('bold').setFontColor('#ffffff').setBackground('#15324b')
+      .setWrap(true).setHorizontalAlignment('center').setVerticalAlignment('middle');
+    if (resultado.rows.length) {
+      aba.getRange(2, 1, resultado.rows.length, cabecalhos.length).setWrap(true).setVerticalAlignment('top');
+      [1, 7, 8].forEach(function (coluna) {
+        aba.getRange(2, coluna, resultado.rows.length, 1).setNumberFormat('dd/mm/yyyy hh:mm:ss');
+      });
+      aba.getRange(2, 9, resultado.rows.length, 1).setNumberFormat('#,##0');
+    }
+    const larguras = formato === 'pdf'
+      ? [90, 110, 80, 100, 115, 55, 90, 90, 50, 100, 130, 65]
+      : [145, 230, 180, 180, 280, 105, 145, 145, 105, 170, 320, 120];
+    larguras.forEach(function (largura, indice) { aba.setColumnWidth(indice + 1, largura); });
+    SpreadsheetApp.flush();
+
+    const nomeArquivo = nomeArquivoExportacaoRastreamento_(formato);
+    const arquivo = formato === 'xlsx'
+      ? DriveApp.getFileById(spreadsheetId).getAs(MimeType.MICROSOFT_EXCEL).setName(nomeArquivo)
+      : gerarBlobPdfRastreamento_(spreadsheetId, aba.getSheetId(), nomeArquivo);
+    return {
+      success: true,
+      filename: nomeArquivo,
+      mimeType: formato === 'xlsx'
+        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        : 'application/pdf',
+      base64: Utilities.base64Encode(arquivo.getBytes()),
+      total: resultado.rows.length
+    };
+  } catch (erro) {
+    console.error('Falha ao exportar relatório de rastreamento em ' + formato.toUpperCase() + ': ' + erro);
+    return { success: false, message: erro.message || String(erro) };
+  } finally {
+    if (spreadsheetId) {
+      try { DriveApp.getFileById(spreadsheetId).setTrashed(true); }
+      catch (erroLimpeza) { console.warn('Não foi possível remover a planilha temporária de exportação: ' + erroLimpeza); }
+    }
+  }
+}
+
+function exportarRelatorioXLSX(filtros) {
+  return exportarRelatorioArquivo_(filtros, 'xlsx');
+}
+
+function exportarRelatorioPDF(filtros) {
+  return exportarRelatorioArquivo_(filtros, 'pdf');
+}
+
+function exportarRelatorioCSV(filtros) {
+  const resultado = obterRelatorioCompletoRastreamento_(filtros);
+  if (!resultado.success) return resultado;
+  const cabecalhos = cabecalhosExportacaoRastreamento_();
   const linhas = [cabecalhos].concat(resultado.rows.map(function (item) {
     return [item.enviadoEm, item.destinatario, item.cc, item.empresa, item.assunto, item.status,
       item.primeiraAbertura, item.ultimaAbertura, item.eventosPixel, item.idCampanha, item.erro, item.origem];
   }));
-  return { success: true, filename: 'autoemail-rastreamento.csv', csv: linhas.map(function (linha) { return linha.map(csvCell_).join(';'); }).join('\r\n') };
+  return {
+    success: true,
+    filename: 'autoemail-rastreamento.csv',
+    csv: linhas.map(function (linha) { return linha.map(csvCell_).join(';'); }).join('\r\n'),
+    total: resultado.rows.length
+  };
 }
 
 function registrarLogBatch(assunto, total, sucessos, erros, detalhesArray) {

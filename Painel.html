@@ -560,7 +560,7 @@
         <section id="panel-tracking" class="panel" aria-labelledby="trackingTitle">
           <div class="page-intro">
             <div><div class="eyebrow">ACOMPANHAMENTO E QUALIDADE</div><h2 id="trackingTitle">Relatório de rastreamento</h2><p>Consulte o histórico por destinatário, identifique falhas e avalie sinais de abertura com contexto.</p></div>
-            <div class="intro-actions"><button class="btn btn-secondary" onclick="exportarRastreamento()">⇩ Exportar CSV</button><button class="btn btn-primary" onclick="carregarRastreamento()">↻ Atualizar relatório</button></div>
+            <div class="intro-actions"><button class="btn btn-secondary btn-small" onclick="exportarRastreamento('csv')" title="Exportar dados em CSV">⇩ Exportar CSV</button><button class="btn btn-secondary btn-small" onclick="exportarRastreamento('xlsx')" title="Exportar planilha Excel">⇩ Exportar XLSX</button><button class="btn btn-secondary btn-small" onclick="exportarRastreamento('pdf')" title="Exportar relatório PDF">⇩ Exportar PDF</button><button class="btn btn-primary" onclick="carregarRastreamento()">↻ Atualizar relatório</button></div>
           </div>
           <div class="tracking-summary">
             <div class="summary-tile"><span>Registros na seleção</span><strong id="trackingTotal">—</strong></div>
@@ -1190,9 +1190,21 @@
       reader.readAsText(arquivo, 'UTF-8');
     }
 
+    function iniciarDownloadBlob(blob, nome) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a'); link.href = url; link.download = nome; document.body.appendChild(link); link.click(); link.remove();
+      window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
     function baixarArquivo(conteudo, nome, tipo) {
-      const blob = new Blob(['\ufeff', conteudo], { type: tipo }); const url = URL.createObjectURL(blob);
-      const link = document.createElement('a'); link.href = url; link.download = nome; document.body.appendChild(link); link.click(); link.remove(); window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      iniciarDownloadBlob(new Blob(['\ufeff', conteudo], { type: tipo }), nome);
+    }
+
+    function baixarArquivoBase64(conteudoBase64, nome, tipo) {
+      const binario = window.atob(conteudoBase64);
+      const bytes = new Uint8Array(binario.length);
+      for (let indice = 0; indice < binario.length; indice++) bytes[indice] = binario.charCodeAt(indice);
+      iniciarDownloadBlob(new Blob([bytes], { type: tipo }), nome);
     }
 
     function enviarTeste() {
@@ -1396,13 +1408,27 @@
       });
     }
 
-    function exportarRastreamento() {
+    function exportarRastreamento(formato) {
+      formato = String(formato || 'csv').toLowerCase();
+      if (['csv', 'xlsx', 'pdf'].indexOf(formato) < 0) formato = 'csv';
       const filtros = { search: document.getElementById('trackingSearch').value, status: document.getElementById('trackingStatus').value, period: document.getElementById('trackingPeriod').value };
-      toggleLoad(true, 'Gerando arquivo CSV…');
-      google.script.run
-        .withSuccessHandler(function (res) { toggleLoad(false); if (!res || !res.success) { toast(res && res.message || 'Não foi possível exportar o relatório.', 'error'); return; } baixarArquivo(res.csv, res.filename || 'autoemail-rastreamento.csv', 'text/csv;charset=utf-8'); toast('Relatório exportado.'); })
-        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
-        .exportarRelatorioCSV(filtros);
+      toggleLoad(true, 'Gerando arquivo ' + formato.toUpperCase() + '…');
+      const chamada = google.script.run
+        .withSuccessHandler(function (res) {
+          toggleLoad(false);
+          if (!res || !res.success) { toast(res && res.message || 'Não foi possível exportar o relatório.', 'error'); return; }
+          if (formato === 'csv') {
+            baixarArquivo(res.csv, res.filename || 'autoemail-rastreamento.csv', 'text/csv;charset=utf-8');
+          } else {
+            if (!res.base64) { toast('O arquivo exportado veio vazio. Tente novamente.', 'error'); return; }
+            baixarArquivoBase64(res.base64, res.filename || 'autoemail-rastreamento.' + formato, res.mimeType || 'application/octet-stream');
+          }
+          toast('Relatório ' + formato.toUpperCase() + ' exportado (' + Number(res.total || 0) + ' registros).');
+        })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); });
+      if (formato === 'xlsx') chamada.exportarRelatorioXLSX(filtros);
+      else if (formato === 'pdf') chamada.exportarRelatorioPDF(filtros);
+      else chamada.exportarRelatorioCSV(filtros);
     }
 
     function abrirConfiguracaoRastreamento() {
