@@ -203,3 +203,103 @@ test('o corpo do editor evita rolagem horizontal desnecessária e preserva o ove
   assert.match(css, /\.editor-content img, \.editor-content table[^\{]*\{ max-width: 100%; \}/);
   assert.match(css, /\.editor-content pre \{[^}]*white-space: pre-wrap;/);
 });
+
+test('exportações do rastreamento preservam filtros e incluem todos os registros em CSV, XLSX e PDF', () => {
+  const exportRows = Array.from({ length: 501 }, (_, index) => ({
+    enviadoEm: '2026-10-23T12:00:00.000Z', destinatario: index === 0 ? '=formula@exemplo.com' : 'contato' + index + '@exemplo.com',
+    cc: '', empresa: 'Empresa ' + index, assunto: 'Assunto', status: 'FALHA',
+    primeiraAbertura: '', ultimaAbertura: '', eventosPixel: 0, idCampanha: 'campanha-' + index,
+    erro: '', origem: 'LIVE'
+  }));
+  let filtrosRecebidos;
+  let matrizPlanilha;
+  let arquivoRemovido = false;
+  let urlPdf = '';
+  let opcoesFetchPdf;
+  const range = {
+    setValues: (values) => { matrizPlanilha = values; return range; }
+  };
+  const rangeProxy = new Proxy(range, {
+    get(target, propriedade) {
+      if (propriedade in target) return target[propriedade];
+      return () => rangeProxy;
+    }
+  });
+  const aba = {
+    getRange: () => rangeProxy,
+    getSheetId: () => 42,
+    setName: () => {}, setFrozenRows: () => {}, setRowHeight: () => {}, setColumnWidth: () => {}
+  };
+  const blob = {
+    setName: (name) => { blob.name = name; return blob; },
+    getBytes: () => [80, 75, 3, 4]
+  };
+  const driveFile = {
+    getAs: (mimeType) => { blob.mimeType = mimeType; return blob; },
+    setTrashed: (value) => { arquivoRemovido = value; }
+  };
+  const dbSandbox = {
+    CONFIG: { MISSING_VAR_FALLBACK: '' },
+    Utilities: {
+      formatDate: (date) => date.toISOString().slice(0, 10),
+      base64Encode: (bytes) => Buffer.from(bytes).toString('base64')
+    },
+    Session: { getScriptTimeZone: () => 'America/Sao_Paulo' },
+    console: { error: () => {}, warn: () => {} },
+    SpreadsheetApp: {
+      create: () => ({ getId: () => 'temp-sheet-id', getSheets: () => [aba] }),
+      flush: () => {}
+    },
+    DriveApp: { getFileById: () => driveFile },
+    MimeType: { MICROSOFT_EXCEL: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+    ScriptApp: { getOAuthToken: () => 'oauth-token' },
+    UrlFetchApp: {
+      fetch: (url, options) => {
+        urlPdf = url;
+        opcoesFetchPdf = options;
+        return {
+          getResponseCode: () => 200,
+          getHeaders: () => ({ 'Content-Type': 'application/pdf' }),
+          getBlob: () => blob
+        };
+      }
+    }
+  };
+  vm.createContext(dbSandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Utils.gs'), 'utf8'), dbSandbox);
+  vm.runInContext(fs.readFileSync(path.join(root, 'Database.gs'), 'utf8'), dbSandbox);
+  dbSandbox.getTrackingReport = (filtros) => {
+    filtrosRecebido = JSON.parse(JSON.stringify(filtros));
+    return { success: true, total: exportRows.length, rows: exportRows };
+  };
+
+  const filtros = { search: 'contato', status: 'FALHA', period: '90' };
+  for (const formato of ['xlsx', 'pdf']) {
+    arquivoRemovido = false;
+    const resultado = formato === 'xlsx'
+      ? dbSandbox.exportarRelatorioXLSX(filtros)
+      : dbSandbox.exportarRelatorioPDF(filtros);
+    assert.equal(resultado.success, true);
+    assert.equal(resultado.total, 501);
+    assert.match(resultado.filename, new RegExp('\\.' + formato + '$'));
+    assert.deepEqual(filtrosRecebido, { search: 'contato', status: 'FALHA', period: '90', exportAll: true });
+    assert.equal(matrizPlanilha.length, 502, 'a planilha deve conter cabeçalho e os 501 registros');
+    assert.equal(matrizPlanilha[1].length, 12);
+    assert.equal(matrizPlanilha[1][1], "'=formula@exemplo.com", 'valores com aparência de fórmula devem ser tratados como texto');
+    assert.equal(arquivoRemovido, true, 'a planilha temporária deve ser removida após a conversão');
+  }
+  assert.match(urlPdf, /format=pdf/);
+  assert.match(urlPdf, /gid=42/);
+  assert.equal(opcoesFetchPdf.headers.Authorization, 'Bearer oauth-token');
+
+  const csv = dbSandbox.exportarRelatorioCSV(filtros);
+  assert.equal(csv.success, true);
+  assert.equal(csv.total, 501);
+  assert.deepEqual(filtrosRecebido, { search: 'contato', status: 'FALHA', period: '90', exportAll: true });
+
+  const html = fs.readFileSync(path.join(root, 'Painel.html'), 'utf8');
+  assert.match(html, /exportarRastreamento\('csv'\)/);
+  assert.match(html, /exportarRastreamento\('xlsx'\)/);
+  assert.match(html, /exportarRastreamento\('pdf'\)/);
+  assert.match(html, /baixarArquivoBase64\(res\.base64/);
+});
