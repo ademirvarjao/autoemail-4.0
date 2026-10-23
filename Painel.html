@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto Email 4.0</title>
+  <style>
+    :root {
+      --navy: #15324b;
+      --navy-deep: #102a40;
+      --teal: #087e8b;
+      --teal-dark: #066c77;
+      --teal-light: #e5f4f4;
+      --gold: #e4ae50;
+      --bg: #f3f6f8;
+      --surface: #ffffff;
+      --surface-soft: #f8fafb;
+      --line: #e2e8ed;
+      --text: #1c2b39;
+      --muted: #6e7c89;
+      --muted-light: #91a0ad;
+      --success: #237a55;
+      --success-soft: #eaf5ef;
+      --warning: #a96a14;
+      --warning-soft: #fff5df;
+      --danger: #bf4c4c;
+      --danger-soft: #fff0ef;
+      --blue: #456c9b;
+      --blue-soft: #eef3fa;
+      --shadow: 0 12px 32px rgba(25, 48, 67, 0.08);
+      --radius: 14px;
+      --radius-sm: 9px;
+      --transition: 160ms ease;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+    body { color: var(--text); background: var(--bg); font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif; font-size: 13px; }
+    button, input, select, textarea { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, select:focus-visible, [contenteditable="true"]:focus-visible { outline: 3px solid rgba(8,126,139,.2); outline-offset: 2px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    #app { display: flex; width: 100%; height: 100%; min-width: 0; }
+    .sidebar { width: 228px; flex: 0 0 228px; min-width: 0; display: flex; flex-direction: column; padding: 20px 14px 14px; color: #eaf2f6; background: linear-gradient(175deg, var(--navy) 0%, var(--navy-deep) 100%); }
+    .brand { display: flex; gap: 11px; align-items: center; padding: 0 9px 22px; }
+    .brand-mark { width: 37px; height: 37px; border-radius: 12px; display: grid; place-items: center; color: var(--navy); font-size: 12px; font-weight: 850; letter-spacing: -.5px; background: linear-gradient(145deg, #f9d68d, var(--gold)); box-shadow: 0 5px 14px rgba(0,0,0,.17); }
+    .brand-name { font-weight: 750; font-size: 14px; letter-spacing: -.2px; }
+    .brand-name small { display: block; margin-top: 3px; color: #a9c1d0; font-size: 10px; font-weight: 500; letter-spacing: .35px; }
+    .workspace-box { display: flex; align-items: center; gap: 10px; margin: 0 3px 24px; padding: 11px 10px; border: 1px solid rgba(226,239,246,.13); border-radius: 11px; background: rgba(255,255,255,.055); }
+    .workspace-icon { width: 29px; height: 29px; border-radius: 9px; display: grid; place-items: center; color: #bce8e7; background: rgba(8,126,139,.25); font-size: 14px; font-weight: 800; }
+    .workspace-copy { min-width: 0; flex: 1; }
+    .workspace-copy strong { display: block; color: #f4f8fa; font-size: 11px; font-weight: 650; }
+    .workspace-copy span { display: block; margin-top: 3px; overflow: hidden; color: #9fb5c2; font-size: 10px; white-space: nowrap; text-overflow: ellipsis; }
+    .nav-label { padding: 0 11px 8px; color: #809cab; font-size: 9px; font-weight: 750; letter-spacing: 1px; text-transform: uppercase; }
+    .nav-list { display: grid; gap: 5px; }
+    .nav-item { width: 100%; display: flex; align-items: center; gap: 12px; border: 0; border-radius: 10px; padding: 11px 12px; color: #b8cbd5; background: transparent; cursor: pointer; text-align: left; transition: var(--transition); }
+    .nav-item:hover { color: #fff; background: rgba(255,255,255,.08); }
+    .nav-item.active { color: white; background: rgba(8,126,139,.42); box-shadow: inset 3px 0 0 #76d5d2; }
+    .nav-symbol { width: 18px; flex: 0 0 18px; text-align: center; font-size: 16px; line-height: 1; }
+    .nav-item span:last-child { font-size: 12px; font-weight: 600; }
+    .sidebar-spacer { flex: 1; }
+    .sidebar-tip { margin: 15px 4px 14px; padding: 12px 12px 13px; border: 1px solid rgba(226,239,246,.12); border-radius: 11px; background: rgba(255,255,255,.045); }
+    .sidebar-tip strong { display: block; margin-bottom: 5px; color: #ecf6f7; font-size: 11px; }
+    .sidebar-tip p { margin: 0; color: #a7bbc6; font-size: 10px; line-height: 1.5; }
+    .sidebar-footer { display: flex; align-items: center; gap: 9px; padding: 13px 7px 3px; border-top: 1px solid rgba(226,239,246,.12); }
+    .avatar { width: 30px; height: 30px; flex: 0 0 30px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; color: #c2ebe9; background: rgba(8,126,139,.28); font-size: 10px; font-weight: 800; }
+    .footer-copy { min-width: 0; }
+    .footer-copy strong { display: block; max-width: 155px; overflow: hidden; color: #e8f0f3; font-size: 10px; font-weight: 650; white-space: nowrap; text-overflow: ellipsis; }
+    .footer-copy span { display: block; margin-top: 3px; color: #91a8b4; font-size: 9px; }
+
+    .main { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+    .topbar { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 28px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.96); }
+    .topbar-left { min-width: 0; }
+    .breadcrumb { margin-bottom: 4px; color: var(--muted-light); font-size: 10px; font-weight: 600; }
+    .topbar h1 { margin: 0; color: var(--navy); font-size: 18px; font-weight: 750; letter-spacing: -.35px; }
+    .topbar-actions { display: flex; align-items: center; gap: 8px; }
+    .connection-pill { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 20px; color: var(--muted); background: var(--surface-soft); font-size: 10px; font-weight: 650; }
+    .connection-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(35,122,85,.1); }
+    .main-scroll { min-height: 0; flex: 1; overflow: auto; padding: 25px 28px 30px; }
+    .panel { display: none; max-width: 1420px; margin: 0 auto; animation: fadeIn .2s ease; }
+    .panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: .65; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+    .page-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+    .eyebrow { margin-bottom: 7px; color: var(--teal); font-size: 9px; font-weight: 800; letter-spacing: 1.25px; text-transform: uppercase; }
+    .page-intro h2 { margin: 0; color: var(--navy); font-size: 22px; font-weight: 780; letter-spacing: -.6px; }
+    .page-intro p { max-width: 680px; margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .intro-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+    .btn { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 13px; border: 1px solid transparent; border-radius: 9px; cursor: pointer; font-size: 11px; font-weight: 680; line-height: 1.1; text-decoration: none; transition: var(--transition); }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:disabled { opacity: .55; cursor: wait; transform: none; }
+    .btn-primary { color: white; border-color: var(--teal); background: var(--teal); box-shadow: 0 4px 10px rgba(8,126,139,.16); }
+    .btn-primary:hover { border-color: var(--teal-dark); background: var(--teal-dark); }
+    .btn-dark { color: white; border-color: var(--navy); background: var(--navy); }
+    .btn-dark:hover { background: var(--navy-deep); }
+    .btn-secondary { color: var(--navy); border-color: var(--line); background: white; }
+    .btn-secondary:hover { border-color: #b8c8d2; background: #f8fafb; }
+    .btn-quiet { color: var(--muted); border-color: transparent; background: transparent; }
+    .btn-quiet:hover { color: var(--navy); background: var(--surface-soft); }
+    .btn-danger-quiet { color: var(--danger); border-color: transparent; background: transparent; }
+    .btn-small { min-height: 29px; padding: 6px 9px; border-radius: 7px; font-size: 10px; }
+    .btn-icon { width: 34px; min-width: 34px; height: 34px; min-height: 34px; padding: 0; font-size: 15px; }
+    .select-control, .input-control, .textarea-control { width: 100%; min-height: 37px; padding: 9px 11px; border: 1px solid #d9e2e8; border-radius: 8px; color: var(--text); background: white; font-size: 11px; transition: var(--transition); }
+    .select-control:focus, .input-control:focus, .textarea-control:focus { border-color: #7bbdc1; box-shadow: 0 0 0 3px rgba(8,126,139,.1); outline: none; }
+    .select-control { width: auto; min-width: 145px; }
+    .field-label { display: block; margin-bottom: 7px; color: #314455; font-size: 10px; font-weight: 750; }
+    .field-hint { margin: 6px 0 0; color: var(--muted-light); font-size: 10px; line-height: 1.45; }
+
+    .setup-banner { display: flex; align-items: center; gap: 13px; margin-bottom: 17px; padding: 13px 15px; border: 1px solid #f0ddb7; border-radius: 12px; background: linear-gradient(100deg, #fff9ed, #fffdf8); }
+    .setup-icon { width: 33px; height: 33px; flex: 0 0 33px; display: grid; place-items: center; border-radius: 10px; color: var(--warning); background: #ffefcb; font-size: 15px; font-weight: 800; }
+    .setup-copy { flex: 1; }
+    .setup-copy strong { display: block; color: #6e4b19; font-size: 11px; }
+    .setup-copy p { margin: 4px 0 0; color: #8b7047; font-size: 10px; line-height: 1.45; }
+    .setup-banner[hidden] { display: none; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 13px; margin-bottom: 15px; }
+    .kpi-card { position: relative; min-height: 125px; padding: 16px 17px 14px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: white; box-shadow: 0 4px 14px rgba(28,43,57,.025); }
+    .kpi-card::after { position: absolute; right: -22px; bottom: -37px; width: 90px; height: 90px; border-radius: 50%; background: rgba(8,126,139,.045); content: ''; }
+    .kpi-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 10px; font-weight: 700; }
+    .kpi-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; color: var(--teal); background: var(--teal-light); font-size: 13px; }
+    .kpi-card:nth-child(2) .kpi-icon { color: var(--blue); background: var(--blue-soft); }
+    .kpi-card:nth-child(3) .kpi-icon { color: var(--warning); background: var(--warning-soft); }
+    .kpi-card:nth-child(4) .kpi-icon { color: var(--danger); background: var(--danger-soft); }
+    .kpi-value { position: relative; z-index: 1; margin-top: 10px; color: var(--navy); font-size: 27px; font-weight: 780; letter-spacing: -.7px; }
+    .kpi-foot { position: relative; z-index: 1; display: flex; align-items: center; gap: 5px; margin-top: 5px; color: var(--muted-light); font-size: 9px; }
+    .trend-change { font-weight: 750; }
+    .trend-change.up { color: var(--success); }
+    .trend-change.down { color: var(--danger); }
+    .trend-change.neutral { color: var(--muted-light); }
+
+    .insight-grid { display: grid; grid-template-columns: minmax(0,1.45fr) minmax(300px,.9fr); gap: 14px; margin-bottom: 15px; }
+    .card { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: white; box-shadow: 0 4px 14px rgba(28,43,57,.025); }
+    .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 17px 18px 0; }
+    .card-header h3 { margin: 0; color: var(--navy); font-size: 13px; font-weight: 750; }
+    .card-header p { margin: 5px 0 0; color: var(--muted-light); font-size: 10px; }
+    .chart-legend { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 9px; white-space: nowrap; }
+    .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 3px; background: var(--teal); }
+    .legend-dot.open { background: var(--gold); }
+    .chart-wrap { display: flex; align-items: stretch; gap: 12px; height: 176px; padding: 23px 18px 12px; }
+    .chart-axis { display: flex; flex: 0 0 24px; flex-direction: column; justify-content: space-between; padding: 0 0 17px; color: #9cabb5; font-size: 8px; text-align: right; }
+    .chart-grid { position: relative; display: flex; flex: 1; align-items: stretch; justify-content: space-around; min-width: 0; border-bottom: 1px solid #dce5e9; background: repeating-linear-gradient(to bottom, transparent 0, transparent 37px, #edf1f3 38px, transparent 39px); }
+    .chart-day { position: relative; display: flex; flex: 1; align-items: flex-end; justify-content: center; gap: 4px; min-width: 18px; padding: 0 2px 18px; }
+    .chart-bar { width: min(15px, 38%); min-height: 3px; border-radius: 5px 5px 1px 1px; background: linear-gradient(180deg, #21a2a6, var(--teal)); transition: height .25s ease; }
+    .chart-bar.open { background: linear-gradient(180deg, #f2cc7a, var(--gold)); }
+    .chart-label { position: absolute; right: 0; bottom: 0; left: 0; color: #8a9aa6; font-size: 8px; text-align: center; }
+    .chart-empty { position: absolute; top: 41%; left: 50%; color: var(--muted-light); font-size: 10px; transform: translate(-50%,-50%); white-space: nowrap; }
+    .recommendation-list { display: grid; gap: 9px; padding: 14px 15px 15px; }
+    .recommendation { display: flex; align-items: flex-start; gap: 9px; padding: 10px 10px; border: 1px solid #eaf0f2; border-radius: 10px; background: #fbfcfd; }
+    .recommendation-icon { width: 23px; height: 23px; flex: 0 0 23px; display: grid; place-items: center; border-radius: 7px; color: var(--teal); background: var(--teal-light); font-size: 11px; font-weight: 800; }
+    .recommendation[data-type="alerta"] .recommendation-icon, .recommendation[data-type="atencao"] .recommendation-icon, .recommendation[data-type="configuracao"] .recommendation-icon { color: var(--warning); background: var(--warning-soft); }
+    .recommendation[data-type="positivo"] .recommendation-icon { color: var(--success); background: var(--success-soft); }
+    .recommendation-copy strong { display: block; margin: 1px 0 4px; color: #304657; font-size: 10px; font-weight: 750; }
+    .recommendation-copy p { margin: 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
+
+    .history-banner { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; padding: 12px 15px; border: 1px solid #dce7ef; border-radius: 11px; color: #496278; background: #f4f8fb; }
+    .history-banner[hidden] { display: none; }
+    .history-banner strong { display: block; color: var(--navy); font-size: 10px; }
+    .history-banner p { margin: 4px 0 0; font-size: 9px; line-height: 1.5; }
+    .table-card { overflow: hidden; }
+    .table-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+    .table-heading h3 { margin: 0; color: var(--navy); font-size: 13px; font-weight: 750; }
+    .table-heading p { margin: 4px 0 0; color: var(--muted-light); font-size: 9px; }
+    .table-wrap { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 10px 13px; color: #778894; background: #f8fafb; font-size: 9px; font-weight: 760; letter-spacing: .25px; white-space: nowrap; }
+    td { padding: 11px 13px; border-top: 1px solid #edf1f3; color: #3d5262; font-size: 10px; vertical-align: top; }
+    tbody tr:hover { background: #fbfdfd; }
+    .cell-primary { max-width: 260px; color: #203648; font-weight: 700; line-height: 1.4; }
+    .cell-secondary { max-width: 250px; margin-top: 3px; overflow: hidden; color: #84939d; font-size: 9px; line-height: 1.4; text-overflow: ellipsis; }
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px; border-radius: 20px; color: #617482; background: #f0f3f5; font-size: 8px; font-weight: 750; white-space: nowrap; }
+    .badge.success { color: var(--success); background: var(--success-soft); }
+    .badge.error { color: var(--danger); background: var(--danger-soft); }
+    .badge.open { color: var(--blue); background: var(--blue-soft); }
+    .badge.legacy { color: #5f6f81; background: #eef0f4; }
+    .empty-state { padding: 30px 18px; color: var(--muted); text-align: center; }
+    .empty-state .empty-icon { width: 43px; height: 43px; display: grid; place-items: center; margin: 0 auto 10px; border-radius: 14px; color: var(--teal); background: var(--teal-light); font-size: 18px; }
+    .empty-state strong { display: block; color: var(--navy); font-size: 11px; }
+    .empty-state p { max-width: 420px; margin: 6px auto 0; color: var(--muted-light); font-size: 10px; line-height: 1.5; }
+    .consultive-note { margin: 12px 2px 0; color: #82919b; font-size: 9px; line-height: 1.5; }
+
+    .editor-toolbar-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
+    .editor-toolbar-header h2 { margin: 0; color: var(--navy); font-size: 19px; letter-spacing: -.4px; }
+    .editor-toolbar-header p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+    .editor-header-actions { display: flex; gap: 8px; }
+    .editor-layout { display: grid; grid-template-columns: minmax(0,1fr) 270px; align-items: start; gap: 14px; }
+    .editor-card { min-width: 0; overflow: hidden; }
+    .editor-tabs { display: flex; align-items: center; gap: 4px; padding: 11px 16px 0; border-bottom: 1px solid var(--line); background: #fbfcfd; }
+    .editor-tab { position: relative; padding: 9px 12px 11px; border: 0; color: #7b8a95; background: transparent; cursor: pointer; font-size: 10px; font-weight: 700; }
+    .editor-tab.active { color: var(--teal); }
+    .editor-tab.active::after { position: absolute; right: 9px; bottom: -1px; left: 9px; height: 2px; border-radius: 3px 3px 0 0; background: var(--teal); content: ''; }
+    .editor-surface { display: none; padding: 17px; }
+    .editor-surface.active { display: block; }
+    .target-strip { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 17px; padding: 10px 12px; border: 1px solid #e5eff0; border-radius: 10px; background: #f5fbfb; }
+    .target-copy strong { display: block; color: var(--navy); font-size: 10px; }
+    .target-copy span { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
+    .target-count { display: inline-flex; align-items: center; gap: 5px; color: var(--teal); font-size: 10px; font-weight: 750; white-space: nowrap; }
+    .subject-row { margin-bottom: 14px; }
+    .editor-toolbar { min-height: 38px; display: flex; flex-wrap: wrap; align-items: center; gap: 3px; padding: 5px 6px; border: 1px solid #dbe3e8; border-bottom: 0; border-radius: 9px 9px 0 0; background: #f8fafb; }
+    .format-btn { min-width: 28px; height: 27px; display: inline-grid; place-items: center; padding: 0 6px; border: 0; border-radius: 6px; color: #536676; background: transparent; cursor: pointer; font-size: 11px; }
+    .format-btn:hover { color: var(--teal); background: var(--teal-light); }
+    .format-separator { width: 1px; height: 17px; margin: 0 3px; background: #dce4e8; }
+    .format-spacer { flex: 1; }
+    .editor-content { min-height: 310px; max-height: 460px; overflow: auto; padding: 18px; border: 1px solid #dbe3e8; border-radius: 0 0 9px 9px; color: #263746; background: white; font-family: Arial, sans-serif; font-size: 14px; line-height: 1.65; outline: none; }
+    .editor-content:empty::before { color: #a2afb8; content: 'Escreva sua mensagem aqui…'; pointer-events: none; }
+    .editor-content img { max-width: 100%; height: auto; cursor: pointer; }
+    .editor-hint { display: flex; justify-content: space-between; gap: 10px; margin-top: 6px; color: #95a2ac; font-size: 9px; }
+    .attachment-area { margin-top: 16px; padding: 13px; border: 1px dashed #c9d6dc; border-radius: 10px; background: #fbfcfd; }
+    .attachment-head { display: flex; align-items: center; justify-content: space-between; gap: 9px; }
+    .attachment-head strong { color: #354b5d; font-size: 10px; }
+    .attachment-list { display: grid; gap: 6px; margin-top: 9px; }
+    .attachment-empty { color: #95a2ac; font-size: 9px; }
+    .attachment-item { display: flex; align-items: center; justify-content: space-between; gap: 9px; padding: 7px 9px; border: 1px solid #e8edf0; border-radius: 7px; background: white; }
+    .attachment-name { min-width: 0; overflow: hidden; color: #506474; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+    .attachment-size { flex: 0 0 auto; color: #91a0aa; font-size: 8px; }
+    .remove-attachment { border: 0; color: #ae6b6b; background: transparent; cursor: pointer; font-size: 14px; }
+    .editor-footer { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .test-recipient { min-width: 190px; flex: 1; max-width: 330px; }
+    .test-recipient label { display: block; margin-bottom: 5px; color: #536676; font-size: 9px; font-weight: 700; }
+    .editor-actions { display: flex; align-items: center; gap: 8px; }
+    .editor-rail { display: grid; gap: 12px; }
+    .rail-card { padding: 14px; }
+    .rail-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+    .rail-heading h3 { margin: 0; color: var(--navy); font-size: 11px; font-weight: 750; }
+    .rail-heading span { color: var(--muted-light); font-size: 9px; }
+    .template-actions-top { display: flex; gap: 5px; }
+    .template-list { display: grid; gap: 5px; max-height: 220px; overflow: auto; }
+    .template-empty { padding: 12px 7px; color: #95a2ac; font-size: 9px; text-align: center; }
+    .template-item { display: flex; align-items: center; gap: 6px; min-width: 0; padding: 7px 7px; border: 1px solid transparent; border-radius: 8px; background: #f7f9fa; transition: var(--transition); }
+    .template-item:hover, .template-item.active { border-color: #c9e5e5; background: #f0f8f8; }
+    .template-checkbox { width: 12px; height: 12px; flex: 0 0 12px; margin: 0; accent-color: var(--teal); }
+    .template-name { min-width: 0; flex: 1; overflow: hidden; color: #455968; cursor: pointer; font-size: 9px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .template-actions { display: flex; flex: 0 0 auto; gap: 1px; }
+    .template-icon-btn { width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 5px; color: #758792; background: transparent; cursor: pointer; font-size: 10px; }
+    .template-icon-btn:hover { color: var(--teal); background: #e4f3f3; }
+    .template-import-export { display: flex; gap: 6px; margin-top: 10px; }
+    .template-import-export .btn { flex: 1; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 155px; overflow: auto; }
+    .chip { max-width: 100%; padding: 6px 8px; overflow: hidden; border: 1px solid #dce9ea; border-radius: 7px; color: #28727a; background: #f1f9f9; cursor: pointer; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+    .chip:hover { border-color: #9acbce; background: #e6f4f4; }
+    .chip-hint { margin: 10px 0 0; color: #8a9aa5; font-size: 9px; line-height: 1.45; }
+    .rail-cc { margin-top: 10px; }
+    .rail-cc .input-control { min-height: 34px; font-size: 10px; }
+    .signature-help { color: #85949e; font-size: 9px; line-height: 1.5; }
+    .save-template-row { display: flex; gap: 6px; margin-top: 10px; }
+    .save-template-row .btn { flex: 1; }
+    .preview-meta { display: flex; flex-wrap: wrap; gap: 7px 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px 9px 0 0; color: #516576; background: #f8fafb; font-size: 9px; }
+    .preview-meta b { color: var(--navy); }
+    .preview-paper { min-height: 410px; padding: 15px; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 9px 9px; background: #eef2f4; }
+    .preview-paper iframe { width: 100%; min-height: 380px; border: 1px solid #e2e8eb; border-radius: 7px; background: white; }
+    .preview-nav { display: inline-flex; align-items: center; gap: 7px; margin-left: auto; color: #647784; }
+    .preview-nav[hidden] { display: none; }
+    .preview-nav button { width: 25px; height: 25px; border: 1px solid #dbe4e8; border-radius: 6px; color: #4c6371; background: white; cursor: pointer; }
+
+    .tracking-summary { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-bottom: 13px; }
+    .summary-tile { padding: 12px 14px; border: 1px solid var(--line); border-radius: 11px; background: white; }
+    .summary-tile span { display: block; color: var(--muted); font-size: 9px; font-weight: 650; }
+    .summary-tile strong { display: block; margin-top: 6px; color: var(--navy); font-size: 18px; font-weight: 780; }
+    .filters-card { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; padding: 11px 12px; }
+    .filters-search { min-width: 180px; flex: 1; }
+    .filters-card .select-control { min-width: 130px; min-height: 34px; font-size: 10px; }
+    .tracking-caveat { margin: 11px 2px 0; padding: 10px 12px; border: 1px solid #e5edf0; border-radius: 9px; color: #6e7f8b; background: #f8fafb; font-size: 9px; line-height: 1.55; }
+    .tracking-caveat strong { color: #4d6474; }
+
+    .modal-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(13,35,52,.48); backdrop-filter: blur(2px); }
+    .modal-backdrop[hidden] { display: none; }
+    .modal { width: min(520px,100%); overflow: hidden; border: 1px solid rgba(255,255,255,.4); border-radius: 16px; background: white; box-shadow: 0 24px 70px rgba(10,30,45,.3); }
+    .modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--line); }
+    .modal-header h3 { margin: 0; color: var(--navy); font-size: 15px; }
+    .modal-header p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .modal-body { padding: 18px 20px; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 13px 20px; border-top: 1px solid var(--line); background: #fafcfd; }
+    .modal-note { margin-top: 12px; padding: 10px 11px; border-radius: 8px; color: #647581; background: #f4f7f8; font-size: 9px; line-height: 1.5; }
+    .modal-link { color: var(--teal); font-weight: 700; }
+    .modal-topline { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; color: #536b79; font-size: 10px; }
+    .modal-topline .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+    #loading { position: fixed; z-index: 30; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 12px; color: var(--navy); background: rgba(243,246,248,.74); backdrop-filter: blur(2px); font-size: 11px; font-weight: 700; }
+    #loading.visible { display: flex; }
+    .spinner { width: 30px; height: 30px; border: 3px solid #d8e5e9; border-top-color: var(--teal); border-radius: 50%; animation: spin .75s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #toastRegion { position: fixed; z-index: 40; right: 18px; bottom: 18px; display: grid; gap: 8px; pointer-events: none; }
+    .toast { width: min(360px,calc(100vw - 36px)); padding: 12px 14px; border: 1px solid var(--line); border-left: 4px solid var(--teal); border-radius: 10px; color: #385061; background: white; box-shadow: var(--shadow); font-size: 10px; line-height: 1.5; animation: toastIn .2s ease; }
+    .toast.error { border-left-color: var(--danger); }
+    .toast.warning { border-left-color: var(--gold); }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+
+    @media (max-width: 1100px) {
+      .sidebar { width: 190px; flex-basis: 190px; }
+      .main-scroll { padding: 20px; }
+      .topbar { padding: 12px 20px; }
+      .editor-layout { grid-template-columns: minmax(0,1fr) 245px; gap: 11px; }
+      .kpi-grid { gap: 9px; }
+    }
+    @media (max-width: 870px) {
+      .sidebar { width: 64px; flex-basis: 64px; padding: 16px 8px 10px; }
+      .brand { justify-content: center; padding: 0 0 20px; }
+      .brand-copy, .workspace-box, .nav-label, .nav-item span:last-child, .sidebar-tip, .footer-copy { display: none; }
+      .nav-item { justify-content: center; padding: 12px 5px; }
+      .nav-symbol { width: 22px; flex-basis: 22px; font-size: 17px; }
+      .sidebar-footer { justify-content: center; padding: 12px 0 3px; }
+      .editor-layout { grid-template-columns: minmax(0,1fr); }
+      .editor-rail { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .insight-grid { grid-template-columns: minmax(0,1fr); }
+      .kpi-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    }
+    @media (max-width: 620px) {
+      .topbar { min-height: 62px; padding: 9px 12px; }
+      .topbar h1 { font-size: 15px; }
+      .connection-pill { display: none; }
+      .main-scroll { padding: 15px 11px 20px; }
+      .page-intro { align-items: flex-start; flex-direction: column; margin-bottom: 14px; }
+      .page-intro h2 { font-size: 19px; }
+      .intro-actions { width: 100%; }
+      .select-control { flex: 1; }
+      .kpi-grid { gap: 8px; }
+      .kpi-card { min-height: 112px; padding: 12px; }
+      .kpi-value { font-size: 23px; }
+      .tracking-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .editor-toolbar-header { align-items: flex-start; }
+      .editor-header-actions { width: 100%; }
+      .editor-header-actions .btn { flex: 1; }
+      .editor-rail { grid-template-columns: minmax(0,1fr); }
+      .editor-surface { padding: 12px; }
+      .editor-content { min-height: 260px; }
+      .editor-footer { align-items: stretch; }
+      .test-recipient { max-width: none; }
+      .editor-actions { justify-content: flex-end; }
+      .chart-legend { display: none; }
+      .filters-card .select-control { flex: 1; }
+      .table-heading { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loading" aria-live="polite" aria-label="Processando">
+    <div class="spinner"></div>
+    <span id="loadingLabel">Carregando central de comunicação…</span>
+  </div>
+
+  <div id="app" data-user-email="<?= userEmail ?>">
+    <aside class="sidebar" aria-label="Navegação principal">
+      <div class="brand">
+        <div class="brand-mark">AE</div>
+        <div class="brand-copy brand-name">Auto Email<small>WORKSPACE · 4.0</small></div>
+      </div>
+      <div class="workspace-box">
+        <div class="workspace-icon">▦</div>
+        <div class="workspace-copy"><strong>Planilha conectada</strong><span id="workspaceName">Conectando…</span></div>
+      </div>
+      <div class="nav-label">Workspace</div>
+      <nav class="nav-list">
+        <button class="nav-item active" data-panel="dashboard" onclick="setPanel('dashboard')" aria-current="page"><span class="nav-symbol">◫</span><span>Dashboard</span></button>
+        <button class="nav-item" data-panel="editor" onclick="setPanel('editor')"><span class="nav-symbol">✎</span><span>Editor e envios</span></button>
+        <button class="nav-item" data-panel="tracking" onclick="setPanel('tracking')"><span class="nav-symbol">◉</span><span>Rastreamento</span></button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-tip">
+        <strong>Decisões melhores</strong>
+        <p>Use os indicadores como sinais, compare períodos e valide resultados com respostas e ações reais.</p>
+      </div>
+      <div class="sidebar-footer">
+        <div class="avatar">AE</div>
+        <div class="footer-copy"><strong id="footerUser">Conta Google</strong><span>Dados persistidos na planilha</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="breadcrumb">Auto Email 4.0 <span aria-hidden="true">/</span> <span id="breadcrumbCurrent">Dashboard</span></div>
+          <h1 id="topTitle">Central de comunicação</h1>
+        </div>
+        <div class="topbar-actions">
+          <span class="connection-pill"><span class="connection-dot"></span><span id="connectionLabel">Planilha conectada</span></span>
+          <button class="btn btn-secondary btn-icon" title="Atualizar dados" aria-label="Atualizar dados" onclick="atualizarTelaAtual()">↻</button>
+          <button class="btn btn-secondary btn-icon" title="Configurações de rastreamento" aria-label="Configurações de rastreamento" onclick="abrirConfiguracaoRastreamento()">⚙</button>
+        </div>
+      </header>
+
+      <div class="main-scroll">
+        <section id="panel-dashboard" class="panel active" aria-labelledby="dashboardTitle">
+          <div class="page-intro">
+            <div>
+              <div class="eyebrow">INTELIGÊNCIA DE CAMPANHAS</div>
+              <h2 id="dashboardTitle">Visão geral</h2>
+              <p>Acompanhe o que foi processado, identifique pontos de atenção e transforme o relatório em próximos passos. <span id="lastUpdated" style="color:#98a6af"></span></p>
+            </div>
+            <div class="intro-actions">
+              <label class="sr-only" for="periodSelect">Período do dashboard</label>
+              <select id="periodSelect" class="select-control" onchange="carregarDashboard()">
+                <option value="7">Últimos 7 dias</option>
+                <option value="30" selected>Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+                <option value="all">Todo o período</option>
+              </select>
+              <button class="btn btn-secondary" onclick="setPanel('editor')"><span>＋</span> Nova campanha</button>
+            </div>
+          </div>
+
+          <div id="setupBanner" class="setup-banner" hidden>
+            <div class="setup-icon">!</div>
+            <div class="setup-copy"><strong>O rastreamento de abertura ainda não está configurado</strong><p>Envios e falhas já serão salvos. Publique o Apps Script como App da Web para habilitar o pixel em campanhas futuras.</p></div>
+            <button class="btn btn-secondary btn-small" onclick="abrirConfiguracaoRastreamento()">Configurar</button>
+          </div>
+
+          <div class="kpi-grid">
+            <article class="kpi-card">
+              <div class="kpi-head"><span>Mensagens aceitas pelo Gmail</span><span class="kpi-icon">↗</span></div>
+              <div class="kpi-value" id="kpiSent">—</div>
+              <div class="kpi-foot"><span id="sentChange" class="trend-change neutral">—</span><span>vs. período anterior</span></div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-head"><span>Aberturas únicas registradas</span><span class="kpi-icon">◉</span></div>
+              <div class="kpi-value" id="kpiOpened">—</div>
+              <div class="kpi-foot"><span id="openedChange" class="trend-change neutral">—</span><span>em mensagens rastreáveis</span></div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-head"><span>Taxa estimada de abertura</span><span class="kpi-icon">⌁</span></div>
+              <div class="kpi-value" id="kpiOpenRate">—</div>
+              <div class="kpi-foot"><span id="kpiTrackable">—</span><span>mensagens com pixel ativo</span></div>
+            </article>
+            <article class="kpi-card">
+              <div class="kpi-head"><span>Falhas registradas</span><span class="kpi-icon">!</span></div>
+              <div class="kpi-value" id="kpiFailures">—</div>
+              <div class="kpi-foot"><span id="failureChange" class="trend-change neutral">—</span><span>vs. período anterior</span></div>
+            </article>
+          </div>
+
+          <div class="insight-grid">
+            <section class="card" aria-labelledby="trendTitle">
+              <div class="card-header">
+                <div><h3 id="trendTitle">Ritmo de campanha</h3><p>Mensagens aceitas e sinais de abertura nos últimos 7 dias</p></div>
+                <div class="chart-legend"><span class="legend-item"><span class="legend-dot"></span>Envios</span><span class="legend-item"><span class="legend-dot open"></span>Aberturas</span></div>
+              </div>
+              <div id="trendChart" class="chart-wrap" role="img" aria-label="Gráfico de envios e aberturas"><div class="chart-empty">Carregando dados…</div></div>
+            </section>
+            <section class="card" aria-labelledby="consultTitle">
+              <div class="card-header"><div><h3 id="consultTitle">Leitura consultiva</h3><p>Recomendações para orientar o próximo passo</p></div><span class="kpi-icon">✦</span></div>
+              <div id="recommendations" class="recommendation-list"><div class="template-empty">Preparando recomendações…</div></div>
+            </section>
+          </div>
+
+          <div id="historyBanner" class="history-banner" hidden>
+            <div aria-hidden="true">◷</div>
+            <div><strong>Histórico anterior à versão 4.0 preservado</strong><p id="historyText"></p></div>
+          </div>
+
+          <section class="card table-card" aria-labelledby="campaignsTitle">
+            <div class="table-heading"><div><h3 id="campaignsTitle">Campanhas recentes</h3><p>Resumo de envios, falhas e sinais de abertura por campanha</p></div><button class="btn btn-secondary btn-small" onclick="setPanel('tracking')">Ver rastreamento detalhado →</button></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Campanha / assunto</th><th>Data</th><th>Status</th><th>Mensagens</th><th>Aberturas únicas</th><th>Taxa estimada</th><th>Próximo passo</th></tr></thead>
+                <tbody id="campaignRows"><tr><td colspan="7"><div class="empty-state"><div class="empty-icon">◫</div><strong>Carregando campanhas…</strong></div></td></tr></tbody>
+              </table>
+            </div>
+          </section>
+          <p class="consultive-note">“Mensagens aceitas” indica que o Gmail processou a solicitação; não é confirmação de entrega na caixa de entrada. A abertura é estimada por carregamento de imagem e pode ser inflada por proxies ou subestimada por bloqueios.</p>
+        </section>
+
+        <section id="panel-editor" class="panel" aria-labelledby="editorTitle">
+          <div class="editor-toolbar-header">
+            <div><div class="eyebrow">CRIAÇÃO E DISTRIBUIÇÃO</div><h2 id="editorTitle">Editor e envios</h2><p>Personalize sua mensagem, revise uma amostra e envie para as linhas visíveis.</p></div>
+            <div class="editor-header-actions"><button class="btn btn-secondary" onclick="enviarTeste()">◎ Enviar teste</button><button class="btn btn-primary" onclick="enviarEmMassa()"><span>➤</span> Disparar e-mails</button></div>
+          </div>
+
+          <div class="editor-layout">
+            <section class="card editor-card" aria-label="Editor de e-mail">
+              <div class="editor-tabs">
+                <button id="editTab" class="editor-tab active" onclick="setMode('edit')">✎ Escrever</button>
+                <button id="viewTab" class="editor-tab" onclick="setMode('view')">◉ Pré-visualizar</button>
+                <div id="previewNav" class="preview-nav" hidden><button onclick="mudarIndex(-1)" aria-label="Registro anterior">‹</button><span id="lblCounter">0 / 0</span><button onclick="mudarIndex(1)" aria-label="Próximo registro">›</button></div>
+              </div>
+              <div id="editorSurface" class="editor-surface active">
+                <div class="target-strip">
+                  <div class="target-copy"><strong>Base de destinatários</strong><span>Apenas linhas visíveis na aba <b id="dataSheetName">Contatos</b> serão consideradas.</span></div>
+                  <div class="target-count"><span>●</span><span id="recipientCount">— linhas</span></div>
+                </div>
+                <div class="subject-row">
+                  <label class="field-label" for="inpSubject">Assunto do e-mail</label>
+                  <input id="inpSubject" class="input-control" type="text" maxlength="250" placeholder="Ex.: Atualização importante para {{ Nome }}" onfocus="lastFocused='subject'">
+                </div>
+                <label class="field-label" for="editorDiv">Corpo da mensagem</label>
+                <div class="editor-toolbar" role="toolbar" aria-label="Formatação do texto">
+                  <button class="format-btn" type="button" onclick="fmt('bold')" title="Negrito"><b>B</b></button>
+                  <button class="format-btn" type="button" onclick="fmt('italic')" title="Itálico"><i>I</i></button>
+                  <button class="format-btn" type="button" onclick="fmt('underline')" title="Sublinhado"><u>U</u></button>
+                  <button class="format-btn" type="button" onclick="fmt('formatBlock','h2')" title="Título">H₂</button>
+                  <span class="format-separator"></span>
+                  <button class="format-btn" type="button" onclick="fmt('justifyLeft')" title="Alinhar à esquerda">≡</button>
+                  <button class="format-btn" type="button" onclick="fmt('justifyCenter')" title="Centralizar">☰</button>
+                  <button class="format-btn" type="button" onclick="fmt('justifyRight')" title="Alinhar à direita">≣</button>
+                  <span class="format-separator"></span>
+                  <button class="format-btn" type="button" onclick="fmt('insertUnorderedList')" title="Lista com marcadores">•≡</button>
+                  <button class="format-btn" type="button" onclick="fmt('insertOrderedList')" title="Lista numerada">1≡</button>
+                  <button class="format-btn" type="button" onclick="inserirLink()" title="Inserir link">↗</button>
+                  <span class="format-separator"></span>
+                  <label class="format-btn" title="Cor do texto" style="position:relative">A<input type="color" aria-label="Escolher cor do texto" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer" onchange="fmt('foreColor',this.value)"></label>
+                  <button class="format-btn" type="button" onclick="fmt('removeFormat')" title="Limpar formatação">Tx</button>
+                  <span class="format-spacer"></span>
+                  <label class="format-btn" title="Inserir imagem" style="cursor:pointer">▧<input type="file" accept="image/*" style="display:none" onchange="inserirImagem(this)"></label>
+                  <button class="format-btn" type="button" onclick="limparEditor()" title="Limpar editor" style="color:var(--danger)">⌫</button>
+                </div>
+                <div id="editorDiv" class="editor-content" contenteditable="true" role="textbox" aria-multiline="true" onfocus="lastFocused='body'"></div>
+                <div class="editor-hint"><span>Insira variáveis clicando nos campos à direita.</span><span>Clique em uma imagem para ajustar a largura.</span></div>
+                <div class="attachment-area">
+                  <div class="attachment-head"><strong>📎 Anexos da campanha</strong><label class="btn btn-secondary btn-small" for="inpFile">＋ Adicionar arquivo<input id="inpFile" type="file" multiple style="display:none" onchange="handleFileSelect(this)"></label></div>
+                  <div id="listaAnexos" class="attachment-list"><div class="attachment-empty">Nenhum anexo adicionado · até 10 MB por arquivo e 20 MB no total.</div></div>
+                </div>
+                <div class="editor-footer">
+                  <div class="test-recipient"><label for="testRecipient">Enviar teste para</label><input id="testRecipient" class="input-control" type="email" placeholder="seuemail@empresa.com"></div>
+                  <div class="editor-actions"><button class="btn btn-quiet" onclick="limparEditor()">Limpar</button><button class="btn btn-primary" onclick="enviarEmMassa()">➤ Disparar e-mails</button></div>
+                </div>
+              </div>
+              <div id="previewSurface" class="editor-surface">
+                <div class="target-strip"><div class="target-copy"><strong>Amostra personalizada</strong><span>Revise destinatário, CC e assunto antes do envio.</span></div><div class="target-count" id="previewTarget">Registro de exemplo</div></div>
+                <div class="preview-meta"><span><b>Para:</b> <span id="previewTo">—</span></span><span><b>CC:</b> <span id="previewCC">—</span></span><span><b>Assunto:</b> <span id="previewSubject">—</span></span></div>
+                <div class="preview-paper"><iframe id="framePreview" title="Pré-visualização do e-mail" sandbox="allow-same-origin"></iframe></div>
+                <p class="field-hint">A visualização usa a primeira linha visível por padrão. Use as setas acima para percorrer a seleção.</p>
+              </div>
+            </section>
+
+            <aside class="editor-rail" aria-label="Ferramentas do editor">
+              <section class="card rail-card">
+                <div class="rail-heading"><h3>Meus templates</h3><span id="templateCount">0</span></div>
+                <div class="template-actions-top"><button id="btnSalvarAlteracao" class="btn btn-secondary btn-small" style="display:none" onclick="salvarTemplateAtual(true)" title="Salvar alterações">Salvar alteração</button><button class="btn btn-primary btn-small" onclick="salvarTemplateAtual(false)">＋ Novo</button></div>
+                <div id="listaTemplates" class="template-list" style="margin-top:9px"><div class="template-empty">Carregando templates…</div></div>
+                <div class="template-import-export"><button class="btn btn-secondary btn-small" onclick="exportarTemplatesSelecionados()">⇧ Exportar</button><label class="btn btn-secondary btn-small" for="templateImport">⇩ Importar<input id="templateImport" type="file" accept=".json,application/json" style="display:none" onchange="importarTemplates(this)"></label></div>
+                <div class="save-template-row"><button class="btn btn-quiet btn-small" onclick="limparEditor()">Novo rascunho</button></div>
+              </section>
+
+              <section class="card rail-card">
+                <div class="rail-heading"><h3>Variáveis da planilha</h3><span>clique para inserir</span></div>
+                <div id="varsContainer" class="chips"><span class="template-empty">Carregando campos…</span></div>
+                <p class="chip-hint">Use <b>{{ Nome da coluna }}</b> no assunto ou no corpo.</p>
+              </section>
+
+              <section class="card rail-card">
+                <div class="rail-heading"><h3>Destinatários adicionais</h3><span>opcional</span></div>
+                <label class="field-label" for="inpGlobalCC">CC global</label>
+                <input id="inpGlobalCC" class="input-control" type="text" placeholder="gestor@empresa.com; equipe@empresa.com">
+                <p class="field-hint">Separados por vírgula ou ponto e vírgula. O sistema valida a cota incluindo CCs.</p>
+              </section>
+
+              <section class="card rail-card">
+                <div class="rail-heading"><h3>Assinatura Gmail</h3><span>conta atual</span></div>
+                <p class="signature-help">Importa a assinatura principal configurada no Gmail e acrescenta ao fim da mensagem.</p>
+                <button class="btn btn-secondary btn-small" style="width:100%;margin-top:10px" onclick="importarAssinatura()">✍ Importar assinatura</button>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <section id="panel-tracking" class="panel" aria-labelledby="trackingTitle">
+          <div class="page-intro">
+            <div><div class="eyebrow">ACOMPANHAMENTO E QUALIDADE</div><h2 id="trackingTitle">Relatório de rastreamento</h2><p>Consulte o histórico por destinatário, identifique falhas e avalie sinais de abertura com contexto.</p></div>
+            <div class="intro-actions"><button class="btn btn-secondary" onclick="exportarRastreamento()">⇩ Exportar CSV</button><button class="btn btn-primary" onclick="carregarRastreamento()">↻ Atualizar relatório</button></div>
+          </div>
+          <div class="tracking-summary">
+            <div class="summary-tile"><span>Registros na seleção</span><strong id="trackingTotal">—</strong></div>
+            <div class="summary-tile"><span>Aberturas únicas</span><strong id="trackingOpened">—</strong></div>
+            <div class="summary-tile"><span>Taxa estimada</span><strong id="trackingRate">—</strong></div>
+            <div class="summary-tile"><span>Eventos do pixel</span><strong id="trackingEvents">—</strong></div>
+          </div>
+          <div class="card filters-card">
+            <label class="sr-only" for="trackingSearch">Buscar no relatório</label><input id="trackingSearch" class="input-control filters-search" placeholder="Buscar destinatário, empresa, assunto ou erro…" oninput="agendarBuscaRastreamento()">
+            <label class="sr-only" for="trackingPeriod">Período do relatório</label><select id="trackingPeriod" class="select-control" onchange="carregarRastreamento()"><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="all">Todo o período</option></select>
+            <label class="sr-only" for="trackingStatus">Status</label><select id="trackingStatus" class="select-control" onchange="carregarRastreamento()"><option value="TODOS">Todos os status</option><option value="ABERTO">Aberto</option><option value="ENVIADO">Enviado</option><option value="FALHA">Falha</option><option value="PENDENTE">Pendente</option></select>
+            <button class="btn btn-secondary btn-small" onclick="limparFiltrosRastreamento()">Limpar filtros</button>
+          </div>
+          <section class="card table-card">
+            <div class="table-heading"><div><h3>Rastreamento detalhado</h3><p id="trackingResultLabel">Os registros mais recentes aparecerão aqui.</p></div><span class="badge">Dados armazenados na planilha</span></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Enviado em</th><th>Destinatário / empresa</th><th>Assunto</th><th>Status</th><th>1ª abertura</th><th>Eventos</th><th>Origem</th></tr></thead>
+                <tbody id="trackingRows"><tr><td colspan="7"><div class="empty-state"><div class="empty-icon">◉</div><strong>Carregando rastreamento…</strong></div></td></tr></tbody>
+              </table>
+            </div>
+          </section>
+          <div class="tracking-caveat"><strong>Como interpretar:</strong> o pixel registra carregamentos da imagem, não uma confirmação de leitura humana. Proxies como proteção de privacidade podem antecipar ou repetir carregamentos; bloqueios de imagem podem gerar zero abertura mesmo quando a mensagem foi lida. Cada linha gera um token por mensagem; quando há CC, o pixel não identifica qual endereço carregou a imagem. O sistema não coleta IP nem user-agent.</div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="trackingSettings" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <section class="modal">
+      <div class="modal-header"><div><h3 id="settingsTitle">Configuração de rastreamento</h3><p>Use a URL da implantação de produção do Apps Script para habilitar o pixel em novos envios.</p></div><button class="btn btn-quiet btn-icon" aria-label="Fechar" onclick="fecharConfiguracaoRastreamento()">×</button></div>
+      <div class="modal-body">
+        <div id="trackingStatusLine" class="modal-topline"><span class="status-dot"></span><span>Verificando deployment…</span></div>
+        <label class="field-label" for="trackingUrlInput">URL do Web App</label>
+        <input id="trackingUrlInput" class="input-control" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+        <p class="field-hint">O endereço deve terminar em <b>/exec</b>. A URL também pode ser lida automaticamente quando o deployment ativo estiver disponível.</p>
+        <div class="modal-note"><b>Publicação necessária:</b> Apps Script → <b>Implantar</b> → <b>Nova implantação</b> → <b>App da Web</b>. Execute como você e permita acesso público para que o pixel seja carregado sem login. Configure o acesso conforme a política da sua organização.</div>
+        <div class="modal-note"><b>Privacidade:</b> o indicador é aproximado e depende de imagens externas. Informe os destinatários e observe as regras aplicáveis à sua operação.</div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-danger-quiet" onclick="desativarRastreamento()">Desativar</button><button class="btn btn-secondary" onclick="fecharConfiguracaoRastreamento()">Cancelar</button><button class="btn btn-primary" onclick="salvarConfiguracaoRastreamento()">Salvar configuração</button></div>
+    </section>
+  </div>
+  <div id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    const appRoot = document.getElementById('app');
+    const userEmail = appRoot.dataset.userEmail || '';
+    const state = {
+      panel: 'dashboard',
+      lastFocused: 'body',
+      loadedTemplate: null,
+      attachments: [],
+      totalSizeBytes: 0,
+      currentIndex: 0,
+      totalRecords: 0,
+      trackingUrl: '',
+      trackingSearchTimer: null,
+      dashboardData: null
+    };
+    const MAX_FILE_BYTES = 10 * 1024 * 1024;
+    const MAX_TOTAL_BYTES = 20 * 1024 * 1024;
+    const numberFormat = new Intl.NumberFormat('pt-BR');
+
+    window.addEventListener('load', inicializar);
+    document.getElementById('editorDiv').addEventListener('click', function (event) {
+      if (event.target && event.target.tagName === 'IMG') {
+        const largura = prompt('Defina a largura da imagem (ex.: 300px ou 70%):', event.target.style.width || '100%');
+        if (largura && /^(\d{1,4}px|\d{1,3}%)$/.test(largura.trim())) {
+          event.target.style.width = largura.trim();
+          event.target.style.height = 'auto';
+        }
+      }
+    });
+    document.getElementById('editorDiv').addEventListener('focus', function () { state.lastFocused = 'body'; });
+    document.getElementById('editorDiv').addEventListener('paste', function (event) {
+      const html = event.clipboardData && event.clipboardData.getData('text/html');
+      if (!html) return;
+      event.preventDefault();
+      document.execCommand('insertHTML', false, sanitizarHtmlEditor(html));
+    });
+    document.getElementById('inpSubject').addEventListener('focus', function () { state.lastFocused = 'subject'; });
+    document.getElementById('framePreview').addEventListener('load', ajustarAlturaIframe);
+
+    function inicializar() {
+      const userEl = document.getElementById('footerUser');
+      if (userEmail) userEl.textContent = userEmail;
+      carregarStatusSistema(function () {
+        carregarVariaveis();
+        atualizarListaTemplates();
+        atualizarContagemDestinatarios();
+        carregarDashboard();
+      });
+    }
+
+    function setPanel(nome) {
+      state.panel = nome;
+      document.querySelectorAll('.panel').forEach(function (painel) { painel.classList.toggle('active', painel.id === 'panel-' + nome); });
+      document.querySelectorAll('.nav-item').forEach(function (botao) {
+        const ativo = botao.dataset.panel === nome;
+        botao.classList.toggle('active', ativo);
+        if (ativo) botao.setAttribute('aria-current', 'page'); else botao.removeAttribute('aria-current');
+      });
+      const titulos = { dashboard: ['Dashboard', 'Central de comunicação'], editor: ['Editor e envios', 'Editor e envios'], tracking: ['Rastreamento', 'Relatório de rastreamento'] };
+      document.getElementById('breadcrumbCurrent').textContent = (titulos[nome] || titulos.dashboard)[0];
+      document.getElementById('topTitle').textContent = (titulos[nome] || titulos.dashboard)[1];
+      if (nome === 'dashboard') carregarDashboard();
+      if (nome === 'editor') { atualizarContagemDestinatarios(); carregarVariaveis(); }
+      if (nome === 'tracking') carregarRastreamento();
+    }
+
+    function atualizarTelaAtual() {
+      if (state.panel === 'dashboard') carregarDashboard();
+      else if (state.panel === 'tracking') carregarRastreamento();
+      else { atualizarContagemDestinatarios(); carregarVariaveis(); atualizarListaTemplates(); }
+    }
+
+    function toggleLoad(mostrar, texto) {
+      const overlay = document.getElementById('loading');
+      if (texto) document.getElementById('loadingLabel').textContent = texto;
+      overlay.classList.toggle('visible', Boolean(mostrar));
+    }
+
+    function toast(mensagem, tipo) {
+      const item = document.createElement('div');
+      item.className = 'toast' + (tipo ? ' ' + tipo : '');
+      item.textContent = String(mensagem || '');
+      document.getElementById('toastRegion').appendChild(item);
+      window.setTimeout(function () { item.remove(); }, 5200);
+    }
+
+    function formatNumber(valor) { return numberFormat.format(Number(valor) || 0); }
+    function formatPercent(valor) { return valor == null || !isFinite(Number(valor)) ? '—' : Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + '%'; }
+    function formatDateTime(valor) {
+      if (!valor) return '—';
+      const data = new Date(valor);
+      if (isNaN(data.getTime())) return '—';
+      return data.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+    function formatDateShort(valor) {
+      if (!valor) return '—';
+      const data = new Date(valor);
+      return isNaN(data.getTime()) ? '—' : data.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+    }
+
+    function carregarStatusSistema(callback) {
+      toggleLoad(true, 'Conectando à planilha e ao banco de dados…');
+      google.script.run
+        .withSuccessHandler(function (res) {
+          toggleLoad(false);
+          if (!res || !res.success) { toast(res && res.message || 'Não foi possível conectar à planilha.', 'error'); return; }
+          state.trackingUrl = res.trackingUrl || '';
+          document.getElementById('workspaceName').textContent = res.spreadsheetName || 'Planilha conectada';
+          document.getElementById('connectionLabel').textContent = 'Planilha conectada';
+          document.getElementById('dataSheetName').textContent = res.dataSheetName || 'Aba de dados';
+          document.getElementById('trackingUrlInput').value = state.trackingUrl;
+          document.getElementById('testRecipient').value = userEmail;
+          atualizarLinhaStatusRastreamento(res.trackingEnabled);
+          if (typeof callback === 'function') callback(res);
+        })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .getAppStatus();
+    }
+
+    function carregarDashboard() {
+      const periodo = document.getElementById('periodSelect').value || '30';
+      google.script.run
+        .withSuccessHandler(function (res) {
+          if (!res || !res.success) { toast(res && res.message || 'Não foi possível carregar o dashboard.', 'error'); return; }
+          state.dashboardData = res;
+          renderizarDashboard(res);
+        })
+        .withFailureHandler(tratarErro)
+        .getDashboardData(periodo);
+    }
+
+    function renderizarDashboard(res) {
+      const kpis = res.kpis || {};
+      document.getElementById('kpiSent').textContent = formatNumber(kpis.mensagensAceitas);
+      document.getElementById('kpiOpened').textContent = formatNumber(kpis.aberturasUnicas);
+      document.getElementById('kpiOpenRate').textContent = formatPercent(kpis.taxaAbertura);
+      document.getElementById('kpiFailures').textContent = formatNumber(kpis.falhas);
+      document.getElementById('kpiTrackable').textContent = formatNumber(kpis.mensagensRastreaveis);
+      renderVariation('sentChange', res.comparacao && res.comparacao.mensagensAceitas, false);
+      renderVariation('openedChange', res.comparacao && res.comparacao.aberturasUnicas, false);
+      renderVariation('failureChange', res.comparacao && res.comparacao.falhas, true);
+      document.getElementById('setupBanner').hidden = Boolean(res.status && res.status.trackingEnabled);
+      document.getElementById('workspaceName').textContent = res.status && res.status.dataSheet || document.getElementById('workspaceName').textContent;
+      document.getElementById('lastUpdated').textContent = res.atualizadoEm ? ' · Atualizado em ' + formatDateTime(res.atualizadoEm) : '';
+      renderizarTendencia(res.trend || []);
+      renderizarRecomendacoes(res.recomendacoes || []);
+      renderizarCampanhas(res.campanhas || []);
+      renderizarHistorico(res.historico || {});
+    }
+
+    function renderVariation(elementId, value, lowerIsBetter) {
+      const elemento = document.getElementById(elementId);
+      elemento.className = 'trend-change neutral';
+      if (value == null || !isFinite(Number(value))) { elemento.textContent = '—'; return; }
+      const numero = Number(value);
+      const sinal = numero > 0 ? '+' : '';
+      elemento.textContent = sinal + numero.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + '%';
+      elemento.classList.remove('neutral');
+      elemento.classList.add((numero === 0 ? 'neutral' : (numero > 0) !== lowerIsBetter ? 'up' : 'down'));
+    }
+
+    function renderizarTendencia(dados) {
+      const container = document.getElementById('trendChart');
+      container.textContent = '';
+      if (!dados.length) { container.innerHTML = '<div class="chart-empty">Sem dados no período selecionado</div>'; return; }
+      const maximo = Math.max(1, ...dados.map(function (item) { return Math.max(Number(item.enviados) || 0, Number(item.aberturas) || 0); }));
+      const eixo = document.createElement('div');
+      eixo.className = 'chart-axis';
+      eixo.innerHTML = '<span>' + formatNumber(maximo) + '</span><span>' + formatNumber(Math.round(maximo / 2)) + '</span><span>0</span>';
+      const grid = document.createElement('div');
+      grid.className = 'chart-grid';
+      dados.forEach(function (item) {
+        const grupo = document.createElement('div');
+        grupo.className = 'chart-day';
+        const enviados = document.createElement('div');
+        enviados.className = 'chart-bar';
+        enviados.style.height = Math.max(3, (Number(item.enviados) || 0) / maximo * 100) + '%';
+        enviados.title = formatNumber(item.enviados) + ' mensagens aceitas';
+        const abertas = document.createElement('div');
+        abertas.className = 'chart-bar open';
+        abertas.style.height = Math.max(3, (Number(item.aberturas) || 0) / maximo * 100) + '%';
+        abertas.title = formatNumber(item.aberturas) + ' aberturas únicas';
+        const label = document.createElement('span');
+        label.className = 'chart-label';
+        label.textContent = item.label || '';
+        grupo.appendChild(enviados); grupo.appendChild(abertas); grupo.appendChild(label); grid.appendChild(grupo);
+      });
+      container.appendChild(eixo);
+      container.appendChild(grid);
+      if (dados.every(function (item) { return !item.enviados && !item.aberturas; })) {
+        const mensagem = document.createElement('div'); mensagem.className = 'chart-empty'; mensagem.textContent = 'Ainda não há atividade registrada'; container.appendChild(mensagem);
+      }
+    }
+
+    function renderizarRecomendacoes(lista) {
+      const container = document.getElementById('recommendations');
+      container.textContent = '';
+      const simbolos = { alerta: '!', atencao: '!', positivo: '✓', configuracao: '⚙', inicio: '↗', nota: 'i' };
+      lista.forEach(function (item) {
+        const card = document.createElement('article'); card.className = 'recommendation'; card.dataset.type = item.tipo || 'nota';
+        const icon = document.createElement('span'); icon.className = 'recommendation-icon'; icon.textContent = simbolos[item.tipo] || '•';
+        const copy = document.createElement('div'); copy.className = 'recommendation-copy';
+        const title = document.createElement('strong'); title.textContent = item.titulo || 'Recomendação';
+        const text = document.createElement('p'); text.textContent = item.texto || '';
+        copy.appendChild(title); copy.appendChild(text); card.appendChild(icon); card.appendChild(copy); container.appendChild(card);
+      });
+    }
+
+    function renderizarCampanhas(campanhas) {
+      const corpo = document.getElementById('campaignRows');
+      corpo.textContent = '';
+      if (!campanhas.length) {
+        const linha = document.createElement('tr'); const celula = document.createElement('td'); celula.colSpan = 7;
+        const vazio = document.createElement('div'); vazio.className = 'empty-state';
+        const icon = document.createElement('div'); icon.className = 'empty-icon'; icon.textContent = '✉';
+        const titulo = document.createElement('strong'); titulo.textContent = 'Nenhuma campanha encontrada neste período';
+        const texto = document.createElement('p'); texto.textContent = 'Faça um envio de teste, confira a personalização e inicie uma campanha para começar a acompanhar os indicadores.';
+        const botao = document.createElement('button'); botao.className = 'btn btn-primary btn-small'; botao.style.marginTop = '11px'; botao.textContent = 'Abrir editor'; botao.addEventListener('click', function () { setPanel('editor'); });
+        vazio.appendChild(icon); vazio.appendChild(titulo); vazio.appendChild(texto); vazio.appendChild(botao); celula.appendChild(vazio); linha.appendChild(celula); corpo.appendChild(linha); return;
+      }
+      campanhas.forEach(function (campanha) {
+        const linha = document.createElement('tr');
+        const assunto = document.createElement('td');
+        const principal = document.createElement('div'); principal.className = 'cell-primary'; principal.textContent = campanha.assunto || '(Sem assunto)';
+        const sub = document.createElement('div'); sub.className = 'cell-secondary'; sub.textContent = campanha.id || '';
+        assunto.appendChild(principal); assunto.appendChild(sub);
+        const data = document.createElement('td'); data.textContent = formatDateTime(campanha.data);
+        const status = document.createElement('td');
+        const badge = document.createElement('span');
+        badge.className = 'badge' + (campanha.fonte !== 'LIVE' ? ' legacy' : (campanha.status === 'ERRO' ? ' error' : campanha.status === 'EM_ANDAMENTO' ? '' : ' success'));
+        badge.textContent = campanha.fonte !== 'LIVE' ? 'Histórico v3.2' : campanha.status === 'EM_ANDAMENTO' ? 'Em andamento' : campanha.status || 'Concluída'; status.appendChild(badge);
+        const enviados = document.createElement('td'); enviados.textContent = formatNumber(campanha.enviado) + ' aceitas · ' + formatNumber(campanha.falhas) + ' falhas';
+        const aberturas = document.createElement('td'); aberturas.textContent = formatNumber(campanha.aberturasUnicas);
+        const taxa = document.createElement('td'); taxa.textContent = formatPercent(campanha.taxaAbertura);
+        const recomendacao = document.createElement('td'); recomendacao.className = 'cell-secondary'; recomendacao.style.maxWidth = '280px'; recomendacao.textContent = campanha.recomendacao || '—';
+        [assunto,data,status,enviados,aberturas,taxa,recomendacao].forEach(function (celula) { linha.appendChild(celula); });
+        corpo.appendChild(linha);
+      });
+    }
+
+    function renderizarHistorico(historico) {
+      const banner = document.getElementById('historyBanner');
+      const temHistorico = Number(historico.enviosReportados || 0) || Number(historico.destinatariosImportados || 0);
+      banner.hidden = !temHistorico;
+      if (temHistorico) {
+        document.getElementById('historyText').textContent = formatNumber(historico.enviosReportados) + ' mensagens aceitas e ' + formatNumber(historico.falhasReportadas) + ' falhas importadas dos resumos v3.2; ' + formatNumber(historico.aberturasImportadas) + ' abertura(s) histórica(s) preservada(s). Esses registros permanecem separados dos indicadores v4.0 para evitar dupla contagem sem vínculo confiável entre campanhas e destinatários.';
+      }
+    }
+
+    function carregarVariaveis() {
+      google.script.run
+        .withSuccessHandler(function (vars) {
+          const container = document.getElementById('varsContainer'); container.textContent = '';
+          if (!vars || !vars.length) { container.innerHTML = '<span class="template-empty">Nenhum cabeçalho encontrado na aba de dados.</span>'; return; }
+          vars.forEach(function (nome) {
+            const chip = document.createElement('button'); chip.type = 'button'; chip.className = 'chip'; chip.textContent = '{{ ' + nome + ' }}'; chip.title = 'Inserir variável ' + nome;
+            chip.addEventListener('click', function () { inserirVariavel('{{ ' + nome + ' }}'); }); container.appendChild(chip);
+          });
+        })
+        .withFailureHandler(tratarErro)
+        .getVariaveisDisponiveis();
+    }
+
+    function atualizarContagemDestinatarios() {
+      google.script.run
+        .withSuccessHandler(function (qtd) { document.getElementById('recipientCount').textContent = formatNumber(qtd) + ' linha(s) visível(is)'; })
+        .withFailureHandler(tratarErro)
+        .contarDestinatarios();
+    }
+
+    function inserirVariavel(texto) {
+      if (state.lastFocused === 'subject') {
+        const input = document.getElementById('inpSubject'); const inicio = input.selectionStart || 0; const fim = input.selectionEnd || inicio;
+        input.value = input.value.slice(0, inicio) + texto + input.value.slice(fim); input.focus(); input.setSelectionRange(inicio + texto.length, inicio + texto.length);
+      } else { document.getElementById('editorDiv').focus(); document.execCommand('insertText', false, texto); }
+    }
+
+    function fmt(command, valor) {
+      document.getElementById('editorDiv').focus();
+      document.execCommand(command, false, valor || null);
+    }
+
+    function inserirLink() {
+      const url = prompt('Informe o endereço do link:', 'https://');
+      if (!url) return;
+      if (!/^https?:\/\//i.test(url.trim())) { toast('Use um endereço iniciado por https:// ou http://.', 'warning'); return; }
+      fmt('createLink', url.trim());
+    }
+
+    function limparEditor() {
+      if (!confirm('Limpar assunto, mensagem e template carregado?')) return;
+      document.getElementById('inpSubject').value = '';
+      document.getElementById('editorDiv').innerHTML = '';
+      state.loadedTemplate = null;
+      atualizarBotoesTemplate();
+      setMode('edit');
+      document.getElementById('editorDiv').focus();
+    }
+
+    function inserirImagem(input) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      if (!/^image\//i.test(file.type)) { toast('Selecione um arquivo de imagem.', 'warning'); input.value = ''; return; }
+      if (file.size > 5 * 1024 * 1024) { toast('A imagem inline deve ter até 5 MB.', 'warning'); input.value = ''; return; }
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        document.getElementById('editorDiv').focus(); document.execCommand('insertImage', false, event.target.result);
+      };
+      reader.onerror = function () { toast('Não foi possível ler a imagem.', 'error'); };
+      reader.readAsDataURL(file); input.value = '';
+    }
+
+    function lerDataUrl(file) {
+      return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function (event) { resolve(String(event.target.result || '')); };
+        reader.onerror = function () { reject(new Error('Falha ao ler ' + file.name)); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleFileSelect(input) {
+      const arquivos = Array.from(input.files || []); input.value = '';
+      for (const file of arquivos) {
+        if (file.size > MAX_FILE_BYTES) { toast('O arquivo "' + file.name + '" excede 10 MB e não foi adicionado.', 'warning'); continue; }
+        if (state.totalSizeBytes + file.size > MAX_TOTAL_BYTES) { toast('O total dos anexos excederia 20 MB. Remova algum arquivo e tente novamente.', 'warning'); continue; }
+        try {
+          const dataUrl = await lerDataUrl(file);
+          state.attachments.push({ name: file.name, type: file.type || 'application/octet-stream', data: dataUrl.split(',')[1] || '', size: file.size });
+          state.totalSizeBytes += file.size;
+        } catch (erro) { toast(erro.message, 'error'); }
+      }
+      renderizarListaAnexos();
+    }
+
+    function renderizarListaAnexos() {
+      const container = document.getElementById('listaAnexos'); container.textContent = '';
+      if (!state.attachments.length) { const vazio = document.createElement('div'); vazio.className = 'attachment-empty'; vazio.textContent = 'Nenhum anexo adicionado · até 10 MB por arquivo e 20 MB no total.'; container.appendChild(vazio); return; }
+      state.attachments.forEach(function (arquivo, index) {
+        const linha = document.createElement('div'); linha.className = 'attachment-item';
+        const nome = document.createElement('span'); nome.className = 'attachment-name'; nome.textContent = '▧ ' + arquivo.name; nome.title = arquivo.name;
+        const tamanho = document.createElement('span'); tamanho.className = 'attachment-size'; tamanho.textContent = formatarTamanho(arquivo.size);
+        const remover = document.createElement('button'); remover.type = 'button'; remover.className = 'remove-attachment'; remover.setAttribute('aria-label', 'Remover ' + arquivo.name); remover.textContent = '×'; remover.addEventListener('click', function () { removerAnexo(index); });
+        linha.appendChild(nome); linha.appendChild(tamanho); linha.appendChild(remover); container.appendChild(linha);
+      });
+    }
+
+    function formatarTamanho(bytes) {
+      return bytes < 1024 * 1024 ? Math.max(1, Math.round(bytes / 1024)) + ' KB' : (bytes / (1024 * 1024)).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' MB';
+    }
+
+    function removerAnexo(index) {
+      const removido = state.attachments[index];
+      if (removido) state.totalSizeBytes = Math.max(0, state.totalSizeBytes - (Number(removido.size) || 0));
+      state.attachments.splice(index, 1); renderizarListaAnexos();
+    }
+
+    function importarAssinatura() {
+      toggleLoad(true, 'Consultando a assinatura do Gmail…');
+      google.script.run
+        .withSuccessHandler(function (res) {
+          toggleLoad(false);
+          if (res && res.success && res.signature) {
+            const editor = document.getElementById('editorDiv'); editor.focus();
+            document.execCommand('insertHTML', false, '<br><br>' + sanitizarHtmlEditor(res.signature));
+            toast('Assinatura inserida no final da mensagem.');
+          } else toast(res && res.message || 'Nenhuma assinatura disponível.', 'warning');
+        })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .getAssinaturaGmail();
+    }
+
+    function salvarTemplateAtual(apenasSalvar) {
+      const assunto = document.getElementById('inpSubject').value.trim();
+      const corpo = document.getElementById('editorDiv').innerHTML;
+      if (!assunto || !corpo.trim() || corpo === '<br>') { toast('Preencha o assunto e o corpo antes de salvar.', 'warning'); return; }
+      let original = state.loadedTemplate; let nome = state.loadedTemplate;
+      if (!apenasSalvar || !original) {
+        original = null; nome = prompt('Dê um nome para o template:', state.loadedTemplate ? state.loadedTemplate + ' (Cópia)' : '');
+        if (!nome || !nome.trim()) return;
+      }
+      toggleLoad(true, 'Salvando template…');
+      google.script.run
+        .withSuccessHandler(function (res) {
+          toggleLoad(false);
+          if (!res || !res.success) { toast(res && res.message || 'Não foi possível salvar o template.', 'error'); return; }
+          state.loadedTemplate = res.name || nome.trim(); atualizarBotoesTemplate(); atualizarListaTemplates(); toast(res.message || 'Template salvo.');
+        })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .salvarNovoTemplate(original, nome, assunto, corpo);
+    }
+
+    function atualizarListaTemplates() {
+      google.script.run
+        .withSuccessHandler(function (lista) {
+          const container = document.getElementById('listaTemplates'); container.textContent = '';
+          document.getElementById('templateCount').textContent = formatNumber((lista || []).length);
+          if (!lista || !lista.length) { const vazio = document.createElement('div'); vazio.className = 'template-empty'; vazio.textContent = 'Nenhum template salvo. Crie um modelo para reutilizar.'; container.appendChild(vazio); return; }
+          lista.forEach(function (nome) {
+            const item = document.createElement('div'); item.className = 'template-item' + (state.loadedTemplate === nome ? ' active' : '');
+            const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.className = 'template-checkbox'; checkbox.value = nome; checkbox.title = 'Marcar para exportação'; checkbox.addEventListener('click', function (event) { event.stopPropagation(); });
+            const nomeEl = document.createElement('button'); nomeEl.type = 'button'; nomeEl.className = 'template-name'; nomeEl.textContent = nome; nomeEl.title = 'Carregar ' + nome; nomeEl.addEventListener('click', function () { carregarTemplate(nome); });
+            const actions = document.createElement('div'); actions.className = 'template-actions';
+            const carregar = criarBotaoTemplate('↥', 'Carregar template', function () { carregarTemplate(nome); });
+            const renomear = criarBotaoTemplate('✎', 'Renomear template', function () { renomearTemplateLateral(nome); });
+            const excluir = criarBotaoTemplate('×', 'Excluir template', function () { excluirTemplate(nome); });
+            actions.appendChild(carregar); actions.appendChild(renomear); actions.appendChild(excluir);
+            item.appendChild(checkbox); item.appendChild(nomeEl); item.appendChild(actions); container.appendChild(item);
+          });
+        })
+        .withFailureHandler(tratarErro)
+        .listarMeusTemplates();
+    }
+
+    function criarBotaoTemplate(texto, titulo, callback) {
+      const botao = document.createElement('button'); botao.type = 'button'; botao.className = 'template-icon-btn'; botao.textContent = texto; botao.title = titulo; botao.addEventListener('click', callback); return botao;
+    }
+
+    function carregarTemplate(nome) {
+      if (state.loadedTemplate && state.loadedTemplate !== nome && !confirm('Substituir a mensagem atual pelo template "' + nome + '"?')) return;
+      toggleLoad(true, 'Carregando template…');
+      google.script.run
+        .withSuccessHandler(function (res) {
+          toggleLoad(false);
+          if (!res || !res.success) { toast(res && res.message || 'Não foi possível carregar o template.', 'error'); return; }
+          document.getElementById('inpSubject').value = res.assunto || ''; document.getElementById('editorDiv').innerHTML = sanitizarHtmlEditor(res.corpo || '');
+          state.loadedTemplate = nome; atualizarBotoesTemplate(); atualizarListaTemplates(); setMode('edit'); toast('Template carregado.');
+        })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .carregarTemplateEspecifico(nome);
+    }
+
+    function renomearTemplateLateral(nomeAntigo) {
+      const novoNome = prompt('Renomear template:', nomeAntigo);
+      if (!novoNome || !novoNome.trim() || novoNome.trim() === nomeAntigo) return;
+      toggleLoad(true, 'Renomeando template…');
+      google.script.run
+        .withSuccessHandler(function (res) {
+          toggleLoad(false);
+          if (res && res.success) { if (state.loadedTemplate === nomeAntigo) state.loadedTemplate = novoNome.trim(); atualizarListaTemplates(); toast(res.message); }
+          else toast(res && res.message || 'Não foi possível renomear o template.', 'error');
+        })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .renomearTemplateBackend(nomeAntigo, novoNome.trim());
+    }
+
+    function atualizarBotoesTemplate() {
+      document.getElementById('btnSalvarAlteracao').style.display = state.loadedTemplate ? 'inline-flex' : 'none';
+    }
+
+    function excluirTemplate(nome) {
+      if (!confirm('Tem certeza de que deseja excluir o template "' + nome + '"?')) return;
+      toggleLoad(true, 'Excluindo template…');
+      google.script.run
+        .withSuccessHandler(function (res) {
+          toggleLoad(false);
+          if (res && res.success) { if (state.loadedTemplate === nome) { state.loadedTemplate = null; atualizarBotoesTemplate(); } atualizarListaTemplates(); toast('Template excluído.'); }
+          else toast(res && res.message || 'Não foi possível excluir o template.', 'error');
+        })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .excluirTemplate(nome);
+    }
+
+    function exportarTemplatesSelecionados() {
+      const selecionados = Array.from(document.querySelectorAll('.template-checkbox:checked')).map(function (caixa) { return caixa.value; });
+      if (!selecionados.length) { toast('Marque um ou mais templates para exportar.', 'warning'); return; }
+      toggleLoad(true, 'Preparando arquivo de exportação…');
+      google.script.run
+        .withSuccessHandler(function (res) {
+          toggleLoad(false);
+          if (!res || !res.success || !res.data || !res.data.length) { toast(res && res.message || 'Não foi possível exportar os templates.', 'error'); return; }
+          baixarArquivo(JSON.stringify(res.data, null, 2), 'templates_autoemail.json', 'application/json;charset=utf-8'); toast(res.data.length + ' template(s) exportado(s).');
+        })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .exportarTemplatesLista(selecionados);
+    }
+
+    function importarTemplates(input) {
+      const arquivo = input.files && input.files[0]; input.value = '';
+      if (!arquivo) return;
+      if (arquivo.size > 5 * 1024 * 1024) { toast('O arquivo de templates excede 5 MB.', 'warning'); return; }
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        let modelos;
+        try { modelos = JSON.parse(event.target.result); if (!Array.isArray(modelos)) throw new Error('O JSON precisa conter uma lista.'); }
+        catch (erro) { toast('Arquivo inválido. Selecione um JSON exportado pelo Auto Email.', 'error'); return; }
+        if (!confirm('Importar ' + modelos.length + ' template(s)? Modelos com o mesmo nome serão atualizados.')) return;
+        toggleLoad(true, 'Importando templates…');
+        google.script.run
+          .withSuccessHandler(function (res) { toggleLoad(false); toast(res && res.message || 'Importação concluída.', res && res.success ? '' : 'warning'); if (res && res.imported) atualizarListaTemplates(); })
+          .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+          .importarTemplatesGeral(modelos);
+      };
+      reader.onerror = function () { toast('Não foi possível ler o arquivo.', 'error'); };
+      reader.readAsText(arquivo, 'UTF-8');
+    }
+
+    function baixarArquivo(conteudo, nome, tipo) {
+      const blob = new Blob(['\ufeff', conteudo], { type: tipo }); const url = URL.createObjectURL(blob);
+      const link = document.createElement('a'); link.href = url; link.download = nome; document.body.appendChild(link); link.click(); link.remove(); window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    function enviarTeste() {
+      const assunto = document.getElementById('inpSubject').value; const html = document.getElementById('editorDiv').innerHTML;
+      const destino = document.getElementById('testRecipient').value.trim();
+      if (!assunto.trim()) { toast('Informe o assunto do e-mail.', 'warning'); return; }
+      if (!html.trim() || html === '<br>') { toast('Escreva o corpo da mensagem antes do teste.', 'warning'); return; }
+      if (!destino) { toast('Informe o e-mail que receberá o teste.', 'warning'); return; }
+      if (!confirm('Enviar um teste para ' + destino + '? O envio não será contabilizado no dashboard.')) return;
+      toggleLoad(true, 'Enviando e-mail de teste…');
+      const dados = processarHtmlComImagens(html);
+      google.script.run
+        .withSuccessHandler(function (res) { toggleLoad(false); toast(res && res.message || 'Teste enviado.', res && res.success ? '' : 'error'); })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .enviarEmailTeste(dados.html, assunto, destino, state.attachments, dados.imagens);
+    }
+
+    function enviarEmMassa() {
+      const assunto = document.getElementById('inpSubject').value; const html = document.getElementById('editorDiv').innerHTML;
+      const cc = document.getElementById('inpGlobalCC').value;
+      if (!assunto.trim()) { toast('Informe o assunto do e-mail.', 'warning'); return; }
+      if (!html.trim() || html === '<br>') { toast('O corpo do e-mail não pode ficar vazio.', 'warning'); return; }
+      toggleLoad(true, 'Validando linhas visíveis e cota de envio…');
+      google.script.run
+        .withSuccessHandler(function (qtd) {
+          toggleLoad(false);
+          if (!qtd) { toast('Nenhuma linha visível encontrada para envio.', 'warning'); return; }
+          let mensagem = 'Você está prestes a processar ' + formatNumber(qtd) + ' linha(s) visível(is).\n\nAssunto: "' + assunto + '"';
+          if (state.attachments.length) mensagem += '\nAnexos: ' + state.attachments.length;
+          if (cc.trim()) mensagem += '\nCC global: ' + cc;
+          mensagem += '\n\nO sistema valida endereços e cota antes de enviar. Continuar?';
+          if (!confirm(mensagem)) return;
+          toggleLoad(true, 'Processando campanha; mantenha esta janela aberta…');
+          const dados = processarHtmlComImagens(html);
+          google.script.run
+            .withSuccessHandler(function (res) {
+              toggleLoad(false);
+              toast(res && res.message || 'Processo finalizado.', res && res.success ? '' : 'error');
+              if (res && res.success) { carregarDashboard(); if (state.panel === 'tracking') carregarRastreamento(); }
+            })
+            .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+            .executarEnvioEmMassa(dados.html, assunto, cc, state.attachments, dados.imagens);
+        })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .contarDestinatarios();
+    }
+
+    function setMode(mode) {
+      const preview = mode === 'view';
+      document.getElementById('editTab').classList.toggle('active', !preview);
+      document.getElementById('viewTab').classList.toggle('active', preview);
+      document.getElementById('editorSurface').classList.toggle('active', !preview);
+      document.getElementById('previewSurface').classList.toggle('active', preview);
+      document.getElementById('previewNav').hidden = !preview;
+      if (preview) atualizarPreview();
+    }
+
+    function atualizarPreview() {
+      const html = document.getElementById('editorDiv').innerHTML; const assunto = document.getElementById('inpSubject').value;
+      google.script.run
+        .withSuccessHandler(function (res) {
+          if (!res || res.error) { document.getElementById('framePreview').srcdoc = '<p style="padding:20px;color:#a44;font:13px Arial">' + escapeText(res && res.error || 'Não foi possível montar a pré-visualização.') + '</p>'; return; }
+          state.currentIndex = res.index; state.totalRecords = res.total;
+          document.getElementById('lblCounter').textContent = (res.index + 1) + ' / ' + res.total;
+          document.getElementById('previewTo').textContent = res.para || '—'; document.getElementById('previewCC').textContent = res.cc || '—'; document.getElementById('previewSubject').textContent = res.assuntoPreview || '—';
+          document.getElementById('previewTarget').textContent = 'Linha ' + (res.index + 1) + ' de ' + res.total;
+          document.getElementById('framePreview').srcdoc = '<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:24px;font:14px/1.6 Arial,sans-serif;color:#243746;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}</style></head><body>' + (res.htmlPreview || '') + '</body></html>';
+        })
+        .withFailureHandler(tratarErro)
+        .gerarPreview(html, assunto, state.currentIndex);
+    }
+
+    function escapeText(valor) {
+      return String(valor || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function mudarIndex(delta) {
+      const novo = state.currentIndex + delta;
+      if (novo >= 0 && novo < state.totalRecords) { state.currentIndex = novo; atualizarPreview(); }
+    }
+
+    function ajustarAlturaIframe() {
+      const frame = document.getElementById('framePreview');
+      try { const altura = frame.contentWindow.document.documentElement.scrollHeight; frame.style.height = Math.max(380, Math.min(900, altura + 20)) + 'px'; } catch (erro) { /* conteúdo ainda não disponível */ }
+    }
+
+    function sanitizarHtmlEditor(html) {
+      const fragmento = document.createElement('template');
+      fragmento.innerHTML = String(html || '');
+      fragmento.content.querySelectorAll('script,iframe,object,embed,form,meta,link,base').forEach(function (elemento) { elemento.remove(); });
+      fragmento.content.querySelectorAll('*').forEach(function (elemento) {
+        Array.from(elemento.attributes).forEach(function (atributo) {
+          const nome = atributo.name.toLowerCase();
+          const valor = atributo.value.trim();
+          if (nome.indexOf('on') === 0 || nome === 'srcdoc' || nome === 'formaction' ||
+              ((nome === 'href' || nome === 'src' || nome === 'xlink:href') && /^(javascript:|vbscript:|data:text\/html)/i.test(valor)) ||
+              (nome === 'style' && /(expression\s*\(|url\s*\(\s*['"]?\s*(javascript:|data:text\/html))/i.test(valor))) {
+            elemento.removeAttribute(atributo.name);
+          }
+        });
+      });
+      return fragmento.innerHTML;
+    }
+
+    function processarHtmlComImagens(htmlContent) {
+      const div = document.createElement('div'); div.innerHTML = sanitizarHtmlEditor(htmlContent || '');
+      const imagensInline = [];
+      div.querySelectorAll('img').forEach(function (img, index) {
+        const largura = img.style.width; const altura = img.style.height;
+        if (largura && /^\d{1,4}px$/.test(largura)) img.setAttribute('width', largura.replace('px', ''));
+        if (altura && /^\d{1,4}px$/.test(altura)) img.setAttribute('height', altura.replace('px', ''));
+        if (img.src.indexOf('data:') === 0) {
+          const separador = img.src.indexOf(','); const metadados = img.src.substring(5, separador); const mime = metadados.split(';')[0] || 'image/png';
+          if (!/^image\//i.test(mime)) return;
+          const cid = 'img_' + index + '_' + Date.now().toString(36);
+          imagensInline.push({ cid: cid, type: mime, data: img.src.substring(separador + 1) });
+          img.src = 'cid:' + cid;
+        }
+      });
+      return { html: div.innerHTML, imagens: imagensInline };
+    }
+
+    function carregarRastreamento() {
+      const filtros = {
+        search: document.getElementById('trackingSearch').value,
+        status: document.getElementById('trackingStatus').value,
+        period: document.getElementById('trackingPeriod').value
+      };
+      google.script.run
+        .withSuccessHandler(function (res) {
+          if (!res || !res.success) { toast(res && res.message || 'Não foi possível carregar o relatório.', 'error'); return; }
+          document.getElementById('trackingTotal').textContent = formatNumber(res.total);
+          document.getElementById('trackingOpened').textContent = formatNumber(res.aberturasUnicas);
+          document.getElementById('trackingRate').textContent = formatPercent(res.taxaAbertura);
+          document.getElementById('trackingEvents').textContent = formatNumber(res.eventosPixel);
+          document.getElementById('trackingResultLabel').textContent = 'Exibindo ' + formatNumber((res.rows || []).length) + ' de ' + formatNumber(res.total) + ' registro(s) correspondentes aos filtros.';
+          renderizarRastreamento(res.rows || []);
+        })
+        .withFailureHandler(tratarErro)
+        .getTrackingReport(filtros);
+    }
+
+    function agendarBuscaRastreamento() {
+      window.clearTimeout(state.trackingSearchTimer);
+      state.trackingSearchTimer = window.setTimeout(carregarRastreamento, 300);
+    }
+
+    function limparFiltrosRastreamento() {
+      document.getElementById('trackingSearch').value = '';
+      document.getElementById('trackingStatus').value = 'TODOS';
+      document.getElementById('trackingPeriod').value = '30';
+      carregarRastreamento();
+    }
+
+    function renderizarRastreamento(registros) {
+      const corpo = document.getElementById('trackingRows'); corpo.textContent = '';
+      if (!registros.length) {
+        const linha = document.createElement('tr'); const celula = document.createElement('td'); celula.colSpan = 7;
+        celula.innerHTML = '<div class="empty-state"><div class="empty-icon">◉</div><strong>Nenhum registro encontrado</strong><p>Amplie o período, remova os filtros ou faça um envio para começar a acompanhar o rastreamento.</p></div>';
+        linha.appendChild(celula); corpo.appendChild(linha); return;
+      }
+      registros.forEach(function (registro) {
+        const linha = document.createElement('tr');
+        const data = document.createElement('td'); data.textContent = formatDateTime(registro.enviadoEm);
+        const dest = document.createElement('td');
+        const empresa = document.createElement('div'); empresa.className = 'cell-primary'; empresa.textContent = registro.empresa || registro.destinatario || '—';
+        const destinatario = document.createElement('div'); destinatario.className = 'cell-secondary'; destinatario.textContent = registro.destinatario + (registro.cc ? ' · CC: ' + registro.cc : '');
+        dest.appendChild(empresa); dest.appendChild(destinatario);
+        const assunto = document.createElement('td'); assunto.textContent = registro.assunto || '—';
+        const status = document.createElement('td'); const badge = document.createElement('span'); badge.className = 'badge ' + (registro.status === 'FALHA' ? 'error' : registro.status === 'ABERTO' ? 'open' : registro.status === 'ENVIADO' ? 'success' : ''); badge.textContent = registro.status || '—'; status.appendChild(badge);
+        const abertura = document.createElement('td'); abertura.textContent = formatDateTime(registro.primeiraAbertura);
+        const eventos = document.createElement('td'); eventos.textContent = formatNumber(registro.eventosPixel);
+        if (registro.erro) { const detalhe = document.createElement('div'); detalhe.className = 'cell-secondary'; detalhe.textContent = registro.erro; abertura.appendChild(detalhe); }
+        const origem = document.createElement('td'); const fonte = document.createElement('span'); fonte.className = 'badge' + (registro.origem.indexOf('LEGACY') === 0 ? ' legacy' : ''); fonte.textContent = registro.origem.indexOf('LEGACY') === 0 ? 'Histórico v3.2' : 'Auto Email 4.0'; origem.appendChild(fonte);
+        [data,dest,assunto,status,abertura,eventos,origem].forEach(function (celula) { linha.appendChild(celula); }); corpo.appendChild(linha);
+      });
+    }
+
+    function exportarRastreamento() {
+      const filtros = { search: document.getElementById('trackingSearch').value, status: document.getElementById('trackingStatus').value, period: document.getElementById('trackingPeriod').value };
+      toggleLoad(true, 'Gerando arquivo CSV…');
+      google.script.run
+        .withSuccessHandler(function (res) { toggleLoad(false); if (!res || !res.success) { toast(res && res.message || 'Não foi possível exportar o relatório.', 'error'); return; } baixarArquivo(res.csv, res.filename || 'autoemail-rastreamento.csv', 'text/csv;charset=utf-8'); toast('Relatório exportado.'); })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .exportarRelatorioCSV(filtros);
+    }
+
+    function abrirConfiguracaoRastreamento() {
+      const modal = document.getElementById('trackingSettings');
+      modal.hidden = false;
+      document.getElementById('trackingUrlInput').value = state.trackingUrl;
+      atualizarLinhaStatusRastreamento(Boolean(state.trackingUrl));
+      document.getElementById('trackingUrlInput').focus();
+    }
+
+    function fecharConfiguracaoRastreamento() { document.getElementById('trackingSettings').hidden = true; }
+
+    function atualizarLinhaStatusRastreamento(ativo) {
+      const linha = document.getElementById('trackingStatusLine'); linha.textContent = '';
+      const ponto = document.createElement('span'); ponto.className = 'status-dot'; ponto.style.background = ativo ? 'var(--success)' : 'var(--gold)';
+      const texto = document.createElement('span'); texto.textContent = ativo ? 'Rastreamento ativo para novos envios.' : 'Rastreamento não configurado.';
+      linha.appendChild(ponto); linha.appendChild(texto);
+    }
+
+    function salvarConfiguracaoRastreamento() {
+      const url = document.getElementById('trackingUrlInput').value.trim();
+      if (!url) { toast('Informe a URL do Web App ou use Desativar.', 'warning'); return; }
+      toggleLoad(true, 'Validando URL do Web App…');
+      google.script.run
+        .withSuccessHandler(function (res) {
+          toggleLoad(false);
+          if (!res || !res.success) { toast(res && res.message || 'URL inválida.', 'error'); return; }
+          state.trackingUrl = url; fecharConfiguracaoRastreamento(); carregarDashboard(); toast(res.message || 'Rastreamento configurado.');
+        })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .setTrackingUrl(url);
+    }
+
+    function desativarRastreamento() {
+      if (!confirm('Desativar o pixel para novos envios? Os registros existentes serão preservados.')) return;
+      toggleLoad(true, 'Atualizando configuração…');
+      google.script.run
+        .withSuccessHandler(function (res) { toggleLoad(false); state.trackingUrl = ''; fecharConfiguracaoRastreamento(); carregarDashboard(); toast(res && res.message || 'Rastreamento desativado.', 'warning'); })
+        .withFailureHandler(function (erro) { toggleLoad(false); tratarErro(erro); })
+        .setTrackingUrl('');
+    }
+
+    function tratarErro(erro) {
+      toggleLoad(false);
+      const mensagem = erro && erro.message ? erro.message : String(erro || 'Erro desconhecido.');
+      console.error(erro); toast('Ocorreu um erro: ' + mensagem, 'error');
+    }
+  </script>
+</body>
+</html>
