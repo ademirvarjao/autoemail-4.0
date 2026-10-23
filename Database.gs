@@ -891,13 +891,13 @@ function nomeArquivoExportacaoRastreamento_(formato) {
   return 'autoemail-rastreamento-' + momento + '.' + formato;
 }
 
-function gerarBlobPdfRastreamento_(spreadsheetId, sheetId, nomeArquivo) {
-  const parametros = {
+function gerarBlobExportacaoRastreamento_(spreadsheetId, sheetId, formato, nomeArquivo) {
+  const parametros = formato === 'pdf' ? {
     format: 'pdf', gid: sheetId, size: 'A4', portrait: 'false', fitw: 'true',
     sheetnames: 'false', printtitle: 'false', pagenumbers: 'true',
     gridlines: 'false', fzr: 'true', top_margin: '0.35', bottom_margin: '0.35',
     left_margin: '0.25', right_margin: '0.25'
-  };
+  } : { format: 'xlsx' };
   const query = Object.keys(parametros).map(function (chave) {
     return encodeURIComponent(chave) + '=' + encodeURIComponent(parametros[chave]);
   }).join('&');
@@ -908,12 +908,18 @@ function gerarBlobPdfRastreamento_(spreadsheetId, sheetId, nomeArquivo) {
     muteHttpExceptions: true
   });
   const codigo = resposta.getResponseCode();
-  const cabecalhos = resposta.getHeaders ? resposta.getHeaders() : {};
-  const tipoConteudo = String(cabecalhos['Content-Type'] || cabecalhos['content-type'] || '');
-  if (codigo !== 200 || !/application\/pdf/i.test(tipoConteudo)) {
-    throw new Error('O Google Sheets não conseguiu gerar o PDF (HTTP ' + codigo + ').');
+  const blob = resposta.getBlob();
+  const bytes = blob.getBytes();
+  const assinaturaValida = formato === 'pdf'
+    ? bytes.length >= 4 && bytes[0] === 37 && bytes[1] === 80 && bytes[2] === 68 && bytes[3] === 70
+    : bytes.length >= 2 && bytes[0] === 80 && bytes[1] === 75;
+  if (codigo !== 200 || !assinaturaValida) {
+    throw new Error('O Google Sheets não conseguiu gerar o arquivo ' + formato.toUpperCase() + ' (HTTP ' + codigo + ').');
   }
-  return resposta.getBlob().setName(nomeArquivo);
+  const mimeType = formato === 'pdf'
+    ? 'application/pdf'
+    : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  return blob.setContentType(mimeType).setName(nomeArquivo);
 }
 
 function exportarRelatorioArquivo_(filtros, formato) {
@@ -950,8 +956,8 @@ function exportarRelatorioArquivo_(filtros, formato) {
 
     const nomeArquivo = nomeArquivoExportacaoRastreamento_(formato);
     const arquivo = formato === 'xlsx'
-      ? DriveApp.getFileById(spreadsheetId).getAs(MimeType.MICROSOFT_EXCEL).setName(nomeArquivo)
-      : gerarBlobPdfRastreamento_(spreadsheetId, aba.getSheetId(), nomeArquivo);
+      ? gerarBlobExportacaoRastreamento_(spreadsheetId, aba.getSheetId(), 'xlsx', nomeArquivo)
+      : gerarBlobExportacaoRastreamento_(spreadsheetId, aba.getSheetId(), 'pdf', nomeArquivo);
     return {
       success: true,
       filename: nomeArquivo,
