@@ -182,3 +182,16 @@ test('rodapé exibe o e-mail completo e remove a legenda de armazenamento', () =
   assert.ok(manifest.oauthScopes.includes('https://www.googleapis.com/auth/userinfo.profile'));
   assert.ok(manifest.oauthScopes.includes('https://www.googleapis.com/auth/script.external_request'));
 });
+
+test('a pré-visualização mostra progresso até carregar o iframe e trata falhas', () => {
+  const html = fs.readFileSync(path.join(root, 'Painel.html'), 'utf8');
+  const css = html.split('<style>', 2)[1].split('</style>', 1)[0];
+  assert.match(html, /id="previewLoading" class="preview-loading" hidden role="status"/);
+  assert.match(html, /id="previewPaper" class="preview-paper" aria-busy="false"/);
+  assert.match(html, /definirCarregamentoPreview\(true, 'Gerando pré-visualização…'\)/);
+  assert.match(html, /state\.previewFrameRequestId === state\.previewRequestId\) definirCarregamentoPreview\(false\)/);
+  assert.match(html, /withFailureHandler\(function \(erro\) \{[\s\S]*?definirCarregamentoPreview\(false\);/);
+  assert.match(html, /if \(requestId !== state\.previewRequestId\) return;/);
+  assert.match(css, /\.preview-paper \{[^}]*position: relative;/);
+  assert.match(css, /\.preview-loading\[hidden\] \{ display: none; \}/);
+});
