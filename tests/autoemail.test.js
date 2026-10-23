@@ -215,7 +215,9 @@ test('exportações do rastreamento preservam filtros e incluem todos os registr
   let matrizPlanilha;
   let arquivoRemovido = false;
   let urlPdf = '';
+  let urlXlsx = '';
   let opcoesFetchPdf;
+  let opcoesFetchXlsx;
   const range = {
     setValues: (values) => { matrizPlanilha = values; return range; }
   };
@@ -231,11 +233,12 @@ test('exportações do rastreamento preservam filtros e incluem todos os registr
     setName: () => {}, setFrozenRows: () => {}, setRowHeight: () => {}, setColumnWidth: () => {}
   };
   const blob = {
+    setContentType: (mimeType) => { blob.mimeType = mimeType; return blob; },
     setName: (name) => { blob.name = name; return blob; },
-    getBytes: () => [80, 75, 3, 4]
+    getBytes: () => blob.bytes
   };
   const driveFile = {
-    getAs: (mimeType) => { blob.mimeType = mimeType; return blob; },
+    getAs: () => { throw new Error('XLSX must be exported through the Sheets export endpoint'); },
     setTrashed: (value) => { arquivoRemovido = value; }
   };
   const dbSandbox = {
@@ -251,17 +254,12 @@ test('exportações do rastreamento preservam filtros e incluem todos os registr
       flush: () => {}
     },
     DriveApp: { getFileById: () => driveFile },
-    MimeType: { MICROSOFT_EXCEL: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
     ScriptApp: { getOAuthToken: () => 'oauth-token' },
     UrlFetchApp: {
       fetch: (url, options) => {
-        urlPdf = url;
-        opcoesFetchPdf = options;
-        return {
-          getResponseCode: () => 200,
-          getHeaders: () => ({ 'Content-Type': 'application/pdf' }),
-          getBlob: () => blob
-        };
+        if (/format=xlsx/.test(url)) { urlXlsx = url; opcoesFetchXlsx = options; blob.bytes = [80, 75, 3, 4]; }
+        else { urlPdf = url; blob.bytes = [37, 80, 68, 70]; opcoesFetchPdf = options; }
+        return { getResponseCode: () => 200, getBlob: () => blob };
       }
     }
   };
@@ -281,6 +279,7 @@ test('exportações do rastreamento preservam filtros e incluem todos os registr
       : dbSandbox.exportarRelatorioPDF(filtros);
     assert.equal(resultado.success, true);
     assert.equal(resultado.total, 501);
+    assert.equal(resultado.mimeType, formato === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/pdf');
     assert.match(resultado.filename, new RegExp('\\.' + formato + '$'));
     assert.deepEqual(filtrosRecebido, { search: 'contato', status: 'FALHA', period: '90', exportAll: true });
     assert.equal(matrizPlanilha.length, 502, 'a planilha deve conter cabeçalho e os 501 registros');
@@ -288,8 +287,10 @@ test('exportações do rastreamento preservam filtros e incluem todos os registr
     assert.equal(matrizPlanilha[1][1], "'=formula@exemplo.com", 'valores com aparência de fórmula devem ser tratados como texto');
     assert.equal(arquivoRemovido, true, 'a planilha temporária deve ser removida após a conversão');
   }
+  assert.match(urlXlsx, /format=xlsx/);
   assert.match(urlPdf, /format=pdf/);
   assert.match(urlPdf, /gid=42/);
+  assert.equal(opcoesFetchXlsx.headers.Authorization, 'Bearer oauth-token');
   assert.equal(opcoesFetchPdf.headers.Authorization, 'Bearer oauth-token');
 
   const csv = dbSandbox.exportarRelatorioCSV(filtros);
