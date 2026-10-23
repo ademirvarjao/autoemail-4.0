@@ -61,6 +61,32 @@ function abrirPainel() {
   SpreadsheetApp.getUi().showModalDialog(html, 'Auto Email 4.0');
 }
 
+function obterFotoPerfilGoogle_(emailUsuario) {
+  try {
+    const resposta = UrlFetchApp.fetch('https://www.googleapis.com/oauth2/v2/userinfo?alt=json', {
+      method: 'get',
+      headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+      muteHttpExceptions: true
+    });
+    if (resposta.getResponseCode() !== 200) return '';
+
+    const perfil = JSON.parse(resposta.getContentText() || '{}');
+    const emailPerfil = String(perfil.email || '').trim();
+    if (emailUsuario && emailPerfil && emailUsuario.toLowerCase() !== emailPerfil.toLowerCase()) return '';
+
+    const foto = String(perfil.picture || '').trim();
+    return /^https:\/\/([a-z0-9-]+\.)*googleusercontent\.com\//i.test(foto) ? foto : '';
+  } catch (erro) {
+    console.warn('Não foi possível carregar a foto do perfil Google: ' + erro);
+    return '';
+  }
+}
+
+function getUserProfilePhoto() {
+  const email = Session.getActiveUser().getEmail() || Session.getEffectiveUser().getEmail() || '';
+  return obterFotoPerfilGoogle_(email);
+}
+
 function inicializarBancoDeDados() {
   try {
     ensureDatabaseAndMigrate_();
