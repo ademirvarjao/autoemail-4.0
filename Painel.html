@@ -461,7 +461,7 @@
         <section id="panel-editor" class="panel" aria-labelledby="editorTitle">
           <div class="editor-toolbar-header">
             <div><div class="eyebrow">CRIAÇÃO E DISTRIBUIÇÃO</div><h2 id="editorTitle">Editor e envios</h2><p>Personalize sua mensagem, revise uma amostra e envie para as linhas visíveis.</p></div>
-            <div class="editor-header-actions"><button class="btn btn-secondary" onclick="enviarTeste()">◎ Enviar teste</button><button class="btn btn-primary" onclick="enviarEmMassa()"><span>➤</span> Disparar e-mails</button></div>
+            <div class="editor-header-actions"><button class="btn btn-primary" onclick="enviarEmMassa()"><span>➤</span> Disparar e-mails</button></div>
           </div>
 
           <div class="editor-layout">
@@ -509,7 +509,7 @@
                 </div>
                 <div class="editor-footer">
                   <div class="test-recipient"><label for="testRecipient">Enviar teste para</label><input id="testRecipient" class="input-control" type="email" placeholder="seuemail@empresa.com"></div>
-                  <div class="editor-actions"><button class="btn btn-quiet" onclick="limparEditor()">Limpar</button><button class="btn btn-primary" onclick="enviarEmMassa()">➤ Disparar e-mails</button></div>
+                  <div class="editor-actions"><button class="btn btn-quiet" onclick="limparEditor()">Limpar</button><button class="btn btn-primary" onclick="enviarTeste()">◎ Enviar teste</button></div>
                 </div>
               </div>
               <div id="previewSurface" class="editor-surface">
