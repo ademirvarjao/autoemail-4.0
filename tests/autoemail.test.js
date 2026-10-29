@@ -304,3 +304,19 @@ test('exportações do rastreamento preservam filtros e incluem todos os registr
   assert.match(html, /exportarRastreamento\('pdf'\)/);
   assert.match(html, /baixarArquivoBase64\(res\.base64/);
 });
+
+test('o botão Enviar teste fica junto ao destinatário e o disparo em massa permanece no topo', () => {
+  const html = fs.readFileSync(path.join(root, 'Painel.html'), 'utf8');
+  const cabecalho = html.match(/<div class="editor-header-actions">([\s\S]*?)<\/div>/);
+  assert.ok(cabecalho, 'ações do cabeçalho do editor devem existir');
+  assert.match(cabecalho[1], /enviarEmMassa\(\)/);
+  assert.doesNotMatch(cabecalho[1], /enviarTeste\(\)|Enviar teste/);
+
+  const inicioRodape = html.indexOf('<div class="editor-footer">');
+  const inicioPreview = html.indexOf('<div id="previewSurface"', inicioRodape);
+  assert.ok(inicioRodape >= 0 && inicioPreview > inicioRodape, 'rodapé do editor deve existir');
+  const rodape = html.slice(inicioRodape, inicioPreview);
+  assert.match(rodape, /id="testRecipient"/);
+  assert.match(rodape, /onclick="enviarTeste\(\)"[^>]*>◎ Enviar teste/);
+  assert.doesNotMatch(rodape, /Disparar e-mails|enviarEmMassa\(\)/);
+});
